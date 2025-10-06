@@ -1,0 +1,10 @@
+{
+  "id": "fix-math-for-obsidian",
+  "name": "Fix Math for Obsidian",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.0",
+  "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, skipping code fences.",
+  "author": "Vladislav Sorokin",
+  "authorUrl": "https://github.com/logux/fix-math-for-obsidian",
+  "isDesktopOnly": true
+}
