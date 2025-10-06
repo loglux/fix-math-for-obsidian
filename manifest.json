@@ -5,6 +5,6 @@
   "minAppVersion": "1.5.0",
   "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, skipping code fences.",
   "author": "Vladislav Sorokin",
-  "authorUrl": "https://github.com/loglux/fix-math-for-obsidian",
+  "authorUrl": "https://github.com/loglux",
   "isDesktopOnly": true
 }
