@@ -8,6 +8,12 @@ When you copy content with mathematical formulas from **ChatGPT**, **OpenWebUI**
 
 Instead of manually finding and replacing each formula, just click one button and all math delimiters in your note will be fixed automatically! 🪄
 
+## Why Another LaTeX Converter?
+
+While there are other great plugins for converting LaTeX delimiters, this one focuses on:
+- **Simplicity** - no build process, just two files
+- **Transparency** - minimal, readable codebase
+- **Easy customization** - straightforward JavaScript anyone can modify
 
 ## Features
 
