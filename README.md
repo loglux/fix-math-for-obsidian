@@ -57,6 +57,7 @@ Display math:
 This is inline math $x^2 + y^2 = z^2$ in text.
 
 Display math:
+
 $$
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
 $$
