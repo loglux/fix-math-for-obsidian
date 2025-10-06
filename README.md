@@ -2,6 +2,13 @@
 
 A simple Obsidian plugin with a button and command to fix LaTeX math delimiters in your notes. It converts `\[…\]` → `$$…$$` and `\(…\)` → `$…$`, while ignoring code blocks (` ```…``` ` and `~~~…~~~`).
 
+## Why This Plugin?
+
+When you copy content with mathematical formulas from **ChatGPT**, **OpenWebUI**, or other AI assistants into Obsidian, the math often comes in LaTeX format using `\(…\)` for inline math and `\[…\]` for display math. However, Obsidian uses `$…$` and `$$…$$` delimiters.
+
+Instead of manually finding and replacing each formula, just click one button and all math delimiters in your note will be fixed automatically! 🪄
+
+
 ## Features
 
 - **Ribbon button** on the sidebar for quick access
