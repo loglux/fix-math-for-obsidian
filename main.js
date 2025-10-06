@@ -1,3 +1,4 @@
+
 // Minimal, no-build Obsidian plugin
 const { Plugin, Notice } = require('obsidian');
 
@@ -6,7 +7,7 @@ module.exports = class FixMathPlugin extends Plugin {
         // Command in the palette
         this.addCommand({
             id: 'fix-math-current-file',
-            name: 'Fix math for Obsidian (current file)',
+            name: 'Fix math (current file)',
             callback: () => this.fixCurrentFile()
         });
 
@@ -19,8 +20,6 @@ module.exports = class FixMathPlugin extends Plugin {
     }
 
     async fixCurrentFile() {
-        const view = this.app.workspace.getActiveViewOfType(this.app.plugins.plugins['fix-math-for-obsidian']?.app?.plugins?.api?.MarkdownView || window.MarkdownView || require('obsidian').MarkdownView);
-        // more universal:
         const mdView = this.app.workspace.getActiveViewOfType(require('obsidian').MarkdownView);
         if (!mdView) {
             new Notice('No active Markdown file');
@@ -132,7 +131,7 @@ function convertMath(text) {
     const displayRe = /(?<!\\)\\\[(.+?)(?<!\\)\\\]/gs;
     const inlineRe  = /(?<!\\)\\\((.+?)(?<!\\)\\\)/g;
 
-    // Process display formulas first, then inline
+    // Display first, then inline
     let out = text.replace(displayRe, (_, inner) => {
         const body = String(inner).trim();
         // Wrap with newlines so Obsidian reliably recognizes the block

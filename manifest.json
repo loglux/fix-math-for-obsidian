@@ -1,6 +1,6 @@
 {
-  "id": "fix-math-for-obsidian",
-  "name": "Fix Math for Obsidian",
+  "id": "fix-math",
+  "name": "Fix Math",
   "version": "1.0.0",
   "minAppVersion": "1.5.0",
   "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, skipping code fences.",
