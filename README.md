@@ -23,6 +23,17 @@ While there are other great plugins for converting LaTeX delimiters, this one fo
 - Does not touch existing `$…$` and `$$…$$` delimiters
 - Preserves all content inside code blocks
 
+## Supported Conversions
+
+| Input format                                         | Detected as               | Output format |
+| ---------------------------------------------------- | ------------------------- | ------------- |
+| `\(...\)`                                            | inline                    | `$...$`       |
+| `\[...\]`                                            | block                     | `$$...$$`     |
+| `[ ... ]` *(if on separate lines and contains math)* | block                     | `$$...$$`     |
+| `( ... )` *(planned)*                                | inline *(future support)* | `$...$`       |
+| ` ```...``` ` or `~~~...~~~`                         | code block                | unchanged     |
+
+
 ## Installation (no build required)
 
 1. Navigate to your Obsidian vault's plugin folder: `.obsidian/plugins/`
