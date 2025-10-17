@@ -121,26 +121,33 @@ function splitByCodeFences(md) {
 
 /** Converting LaTeX delimiters in a segment outside of code. */
 function convertMath(text) {
-    // 1) Do not touch existing $$…$$ and $…$ — for simplicity, leave as is.
-    // 2) Convert \[ … \] → $$ … $$ (multiline)
-    // 3) Convert \( … \) → $ … $
+    // 1) \[ ... \]  → $$ ... $$   (no lookbehind; keeps the preceding character)
+    const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 
-    // Regex with "s" (dotAll) flag for multiline display formulas.
-    // Use negative lookbehind (?<!\\) to avoid touching escaped \\[ and \\(.
-    // Modern Obsidian engine (Electron/Chromium) supports lookbehind.
-    const displayRe = /(?<!\\)\\\[(.+?)(?<!\\)\\\]/gs;
-    const inlineRe  = /(?<!\\)\\\((.+?)(?<!\\)\\\)/g;
+    // 2) Multiline [ ... ] blocks → $$ ... $$
+    //    Works only when "[" and "]" are on separate lines.
+    //    This avoids touching inline brackets like [1, 2, 3] or [note].
+    const bracketBlockRe = /^[ \t]*\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
 
-    // Display first, then inline
-    let out = text.replace(displayRe, (_, inner) => {
-        const body = String(inner).trim();
-        // Wrap with newlines so Obsidian reliably recognizes the block
-        return `$$\n${body}\n$$`;
+    // 3) \( ... \)  → $ ... $   (no lookbehind; keeps the preceding character)
+    const inlineRe = /(^|[^\\])\\\((.+?)\\\)/g;
+
+    // Simple heuristic to detect if the block content looks like math
+    const isMathy = (s) => /[\\_^=]|\\text\{/.test(s);
+
+    // Convert \[ ... \] → $$ ... $$
+    let out = text.replace(displayBackslashRe, (_, pre, inner) => {
+        return `${pre}$$\n${inner.trim()}\n$$`;
     });
 
-    out = out.replace(inlineRe, (_, inner) => {
-        const body = String(inner).trim();
-        return `$${body}$`;
+    // Convert multiline [ ... ] → $$ ... $$ (only if it looks like math)
+    out = out.replace(bracketBlockRe, (m, inner) => {
+        return isMathy(inner) ? `$$\n${inner.trim()}\n$$` : m;
+    });
+
+    // Convert \( ... \) → $ ... $
+    out = out.replace(inlineRe, (_, pre, inner) => {
+        return `${pre}$${inner.trim()}$`;
     });
 
     return out;
