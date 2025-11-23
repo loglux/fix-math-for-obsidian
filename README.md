@@ -8,41 +8,62 @@ When you copy content with mathematical formulas from **ChatGPT**, **OpenWebUI**
 
 Instead of manually finding and replacing each formula, just click one button and all math delimiters in your note will be fixed automatically! 🪄
 
-## Why Another LaTeX Converter?
+## Why another LaTeX converter?
 
-While there are other great plugins for converting LaTeX delimiters, this one focuses on:
-- **Simplicity** - no build process, just two files
-- **Transparency** - minimal, readable codebase
-- **Easy customization** - straightforward JavaScript anyone can modify
+While there are other plugins for converting LaTeX delimiters, this one focuses on:
+
+- **Simplicity** – a single command that only touches what is obviously maths.
+- **Transparency** – a small, readable TypeScript codebase.
+- **Safety** – leaves code blocks, existing `$…$` and non-math text alone.
 
 ## Features
 
-- **Ribbon button** on the sidebar for quick access
-- **Command palette** integration: "Fix math for Obsidian (current file)"
-- Works only with the **currently open file**
-- Does not touch existing `$…$` and `$$…$$` delimiters
-- Preserves all content inside code blocks
+- **Ribbon button** on the sidebar for quick access.
+- **Command palette** integration: “Fix math (current file)”.
+- Works only on the **currently open file**.
+- Does not touch existing `$…$` and `$$…$$` delimiters.
+- Preserves all content inside fenced code blocks.
+- Detects maths in plain parentheses, including typical cases like:
+    - `(x\to 1)`
+    - `(0/0)`
+    - `(3x^{2} - 3 = 0)`
+    - `(3x^{2} - 3)'`, `(3x^{2} - 2x - 1)'`
 
-## Supported Conversions
+## Supported conversions
 
-| Input format                                         | Detected as               | Output format |
-| ---------------------------------------------------- | ------------------------- | ------------- |
-| `\(...\)`                                            | inline                    | `$...$`       |
-| `\[...\]`                                            | block                     | `$$...$$`     |
-| `[ ... ]` *(if on separate lines and contains math)* | block                     | `$$...$$`     |
-| `( ... )` *(planned)*                                | inline *(future support)* | `$...$`       |
-| ` ```...``` ` or `~~~...~~~`                         | code block                | unchanged     |
+| Input format                                         | Detected as | Output format |     |
+| ---------------------------------------------------- | ----------- | ------------- | --- |
+| `\(...\)`                                            | inline      | `$...$`       |     |
+| `\[...\]`                                            | block       | `$$...$$`     |     |
+| `[ ... ]` *(if on separate lines and contains math)* | block       | `$$...$$`     |     |
+| `( ... )` *(if contains math)*                       | inline      | `$...$`       |     |
+| ` ```...``` ` or `~~~...~~~`                         | code block  | unchanged     |     |
+|                                                      |             |               |     |
+|                                                      |             |               |     |
 
+## Installation
 
-## Installation (no build required)
+### From release (recommended)
 
-1. Navigate to your Obsidian vault's plugin folder: `.obsidian/plugins/`
-2. Create a new folder: `fix-math-for-obsidian/`
-3. Inside this folder, create two files:
-    - `manifest.json` (copy from this repository)
-    - `main.js` (copy from this repository)
-4. Restart Obsidian
-5. Go to **Settings** → **Community plugins** → Enable **Fix Math for Obsidian**
+1. Go to the **Releases** section of this repository.
+2. Download the latest versions of:
+    - `manifest.json`
+    - `main.js`
+3. In your Obsidian vault, navigate to:  
+   `.obsidian/plugins/fix-math-for-obsidian/`
+4. Place both files in that folder.
+5. Restart Obsidian.
+6. Go to **Settings → Community plugins** and enable **Fix Math for Obsidian**.
+
+### From source (for developers)
+
+1. Clone this repository.
+2. Run:
+
+```bash
+   npm install
+   npm run build
+```
 
 ## How to Use
 
@@ -55,6 +76,16 @@ While there are other great plugins for converting LaTeX delimiters, this one fo
     - "No changes required" if nothing needed fixing
     - "Error: failed to process file (see console)" if something went wrong
 
+## Keyboard shortcut
+
+The plugin does not set a default hotkey, but you can add one yourself:
+
+1. Open **Settings → Hotkeys**.
+2. Search for **“Fix math (current file)”**.
+3. Assign any shortcut you like, for example <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>.
+
+This makes it very convenient to fix maths in the current note with a single key press.
+
 ## Examples
 
 **Before:**
@@ -62,9 +93,9 @@ While there are other great plugins for converting LaTeX delimiters, this one fo
 
 This is inline math \(x^2 + y^2 = z^2\) in text.
 
-Display math:
-\[
-\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+Display math:  
+\[  
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}  
 \]
 
 
@@ -75,28 +106,24 @@ This is inline math $x^2 + y^2 = z^2$ in text.
 
 Display math:
 
+$$  
+\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}  
 $$
-\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+  
+---  
+
+## Customisation
+
+By default, block maths is wrapped as:
+
+```tex
 $$
-
----
-
-## Customization
-
-If you prefer display formulas **without extra blank lines** around `$$`, modify the `convertMath()` function in `main.js`:
-
-Replace:
-```javascript
-return `$$\n${body}\n$$`;
+... 
+$$
 ```
 
-With:
-```javascript
-return `$$${body}$$`;
-```
+If you prefer a different style, you can adjust the convertMath() implementation in main.ts
+(or in the compiled main.js), for example to remove blank lines around `$$`.
 
-(or add newlines before/after as you prefer)
-
-## License
-
-MIT  
+## Licence
+MIT
