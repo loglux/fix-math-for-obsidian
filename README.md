@@ -50,7 +50,7 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
     - `manifest.json`
     - `main.js`
 3. In your Obsidian vault, navigate to:  
-   `.obsidian/plugins/fix-math-for-obsidian/`
+   `.obsidian/plugins/fix-math/`
 4. Place both files in that folder.
 5. Restart Obsidian.
 6. Go to **Settings → Community plugins** and enable **Fix Math for Obsidian**.
@@ -64,6 +64,10 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
    npm install
    npm run build
 ```
+- This will produce `main.js` next to `main.ts`.
+
+- Copy `manifest.json` and the built `main.js` into your vault’s plugin folder:  
+  `.obsidian/plugins/fix-math/`.
 
 ## How to Use
 
@@ -98,6 +102,8 @@ Display math:
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}  
 \]
 
+And a mixed example:  
+(0/0) is an indeterminate form, and (3x2−3)′=6x(3x^{2}-3)' = 6x(3x2−3)′=6x.
 
 
 **After:**
@@ -109,7 +115,12 @@ Display math:
 $$  
 \int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}  
 $$
-  
+
+And the mixed example:
+
+$0/0$ is an indeterminate form, and $(3x^{2}-3)' = 6x$.
+
+
 ---  
 
 ## Customisation
@@ -122,8 +133,7 @@ $$
 $$
 ```
 
-If you prefer a different style, you can adjust the convertMath() implementation in main.ts
-(or in the compiled main.js), for example to remove blank lines around `$$`.
+If you prefer display formulae without extra blank lines around $$, you can tweak the convertMath() implementation in main.ts (or the compiled main.js) to change how block maths is wrapped..
 
 ## Licence
 MIT
