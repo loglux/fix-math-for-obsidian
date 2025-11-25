@@ -1,7 +1,7 @@
 {
   "id": "fix-math",
   "name": "Fix Math",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "minAppVersion": "1.5.0",
   "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, skipping code fences.",
   "author": "Vladislav Sorokin",

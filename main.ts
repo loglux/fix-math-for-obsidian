@@ -145,15 +145,10 @@ function convertMath(text: string): string {
 
     // Heuristic: treat content as maths if it contains:
     //  - LaTeX markers (\ , _ , ^ , \text{...})
-    //  - or, if purely ASCII, a digit AND a math operator (+-*/=)
+    //  - or, if purely ASCII, a digit AND a maths operator (+-*/=)
     const isMathy = (s: string) => {
         if (/[\\_^]|\\text\{/.test(s)) {
             return true;
-        }
-
-        // If there is any non-ASCII (e.g. Cyrillic), treat as text
-        if (/[^\x00-\x7F]/.test(s)) {
-            return false;
         }
 
         const hasDigit = /\d/.test(s);
@@ -175,13 +170,30 @@ ${inner.trim()}
 $$` : m;
     });
 
-    // Convert ( ... ) → $ ... $ when it looks like maths
-    out = convertPlainParens(out, isMathy);
+    // At this point, all block maths are in $$ ... $$.
+    // We must NOT touch anything inside $$ ... $$ with inline rules.
+    const parts = out.split(/(\$\$[\s\S]*?\$\$)/);
+    out = parts
+        .map((part, idx) => {
+            // Odd indices (with capturing group) are the $$...$$ blocks themselves.
+            if (idx % 2 === 1 && part.startsWith("$$")) {
+                return part; // leave block maths as-is
+            }
 
-    // Convert \( ... \) → $ ... $
-    out = out.replace(inlineBackslashRe, (_, pre: string, inner: string) => {
-        return `${pre}$${inner.trim()}$`;
-    });
+            // 1) Convert plain ( ... ) → $ ... $ when it looks like maths
+            let chunk = convertPlainParens(part, isMathy);
+
+            // 2) Convert \( ... \) → $ ... $
+            chunk = chunk.replace(
+                inlineBackslashRe,
+                (_, pre: string, inner: string) => {
+                    return `${pre}$${inner.trim()}$`;
+                }
+            );
+
+            return chunk;
+        })
+        .join("");
 
     return out;
 }
@@ -191,11 +203,11 @@ $$` : m;
  * ( ... ) → $ ... $ (only if content "looks like maths").
  *
  * Behaviour:
- *  - For "(x\\to 1)"          → "$x\\to 1$"
- *  - For "(0/0)"              → "$0/0$"
- *  - For "(3x^{2}-3 = 0)"     → "$3x^{2}-3 = 0$"
- *  - For "((3x^{2}-3)' = 6x)" → "$((3x^{2}-3)' = 6x)$"
- *  - For "(и результат уже не (3/2))" → "(и результат уже не $3/2$)"
+ *  - "(x\\to 1)"          → "$x\\to 1$"
+ *  - "(0/0)"              → "$0/0$"
+ *  - "(3x^{2}-3 = 0)"     → "$3x^{2}-3 = 0$"
+ *  - "((3x^{2}-3)' = 6x)" → "$((3x^{2}-3)' = 6x)$"
+ *  - "(про (3x^{2}-3) в числителе)" → "(про $3x^{2}-3$ в числителе)"
  */
 function convertPlainParens(text: string, isMathy: (s: string) => boolean): string {
     let result = "";
@@ -258,7 +270,15 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
                 continue;
             }
 
-            // If content does not look like maths, do NOT jump over it:
+            // If inner clearly contains natural-language words (any alphabet, length ≥ 2),
+            // we treat the outer parentheses as text, not maths.
+            if (/[A-Za-zА-Яа-яЁё]{2,}/.test(inner)) {
+                result += ch;
+                i += 1;
+                continue;
+            }
+
+            // If content does not look like maths at all, do NOT jump over it:
             // just output "(" and continue scanning inside for inner (...) blocks.
             if (!isMathy(inner)) {
                 result += ch;
