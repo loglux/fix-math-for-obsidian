@@ -1,6 +1,6 @@
 {
   "name": "fix-math",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "scripts": {
     "build": "esbuild main.ts --bundle --outfile=main.js --format=cjs --platform=node --external:obsidian"
   },

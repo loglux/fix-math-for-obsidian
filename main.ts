@@ -137,15 +137,16 @@ function convertMath(text: string): string {
     const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 
     // 2) Multiline [ ... ] blocks → $$ ... $$ (only when it looks like maths)
+    //    Optionally allow a simple Markdown prefix before "[" (e.g. "# ", "> ", "- ").
     const bracketBlockRe =
-        /^[ \t]*\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
+        /^[ \t]*([#>\-\*\+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
 
     // 3) \( ... \)  → $ ... $ (backslashed inline math)
     const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
 
     // Heuristic: treat content as maths if it contains:
     //  - LaTeX markers (\ , _ , ^ , \text{...})
-    //  - or, if purely ASCII, a digit AND a maths operator (+-*/=)
+    //  - or, if ASCII-ish, a digit AND a maths operator (+-*/=)
     const isMathy = (s: string) => {
         if (/[\\_^]|\\text\{/.test(s)) {
             return true;
@@ -164,18 +165,22 @@ $$`;
     });
 
     // Convert multiline [ ... ] → $$ ... $$ (only if it looks like maths)
-    out = out.replace(bracketBlockRe, (m: string, inner: string) => {
-        return isMathy(inner) ? `$$
+    out = out.replace(
+        bracketBlockRe,
+        (m: string, prefix: string | undefined, inner: string) => {
+            const p = prefix ?? "";
+            return isMathy(inner) ? `${p}$$
 ${inner.trim()}
 $$` : m;
-    });
+        }
+    );
 
     // At this point, all block maths are in $$ ... $$.
     // We must NOT touch anything inside $$ ... $$ with inline rules.
     const parts = out.split(/(\$\$[\s\S]*?\$\$)/);
     out = parts
         .map((part, idx) => {
-            // Odd indices (with capturing group) are the $$...$$ blocks themselves.
+            // Odd indices (captured group) are the $$...$$ blocks themselves.
             if (idx % 2 === 1 && part.startsWith("$$")) {
                 return part; // leave block maths as-is
             }
@@ -270,9 +275,9 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
                 continue;
             }
 
-            // If inner clearly contains natural-language words (any alphabet, length ≥ 2),
+            // If inner clearly contains natural-language words (any letters, length ≥ 2),
             // we treat the outer parentheses as text, not maths.
-            if (/[A-Za-zА-Яа-яЁё]{2,}/.test(inner)) {
+            if (/\p{L}{2,}/u.test(inner)) {
                 result += ch;
                 i += 1;
                 continue;
