@@ -146,16 +146,31 @@ function convertMath(text: string): string {
 
     // Heuristic: treat content as maths if it contains:
     //  - LaTeX markers (\ , _ , ^ , \text{...})
+    //  - or obvious math Unicode symbols (→, ∞, ±, ≥, ≤)
     //  - or, if ASCII-ish, a digit AND a maths operator (+-*/=)
     const isMathy = (s: string) => {
-        if (/[\\_^]|\\text\{/.test(s)) {
+        // Explicit mathematical markers: LaTeX commands, subscripts/superscripts, arrows, ∞, ±, ≥, ≤
+        if (/[\\_^→∞±≥≤]|\\text\{/.test(s)) {
             return true;
         }
 
         const hasDigit = /\d/.test(s);
         const hasOp = /[+\-*/=]/.test(s);
-        return hasDigit && hasOp;
+
+        // Classic case: there are digits AND operators present
+        if (hasDigit && hasOp) {
+            return true;
+        }
+
+        // NEW: a pure number (possibly with a minus sign and/or a decimal part) also counts as maths
+        // Examples: "0", "-1", "3.14"
+        if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
+            return true;
+        }
+
+        return false;
     };
+
 
     // Convert \[ ... \] → $$ ... $$
     let out = text.replace(displayBackslashRe, (_, pre: string, inner: string) => {
@@ -275,9 +290,12 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
                 continue;
             }
 
-            // If inner clearly contains natural-language words (any letters, length ≥ 2),
+            // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
+            const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
+
+            // If the remaining text clearly contains natural-language words (any letters, length ≥ 2),
             // we treat the outer parentheses as text, not maths.
-            if (/\p{L}{2,}/u.test(inner)) {
+            if (/\p{L}{2,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
                 continue;
@@ -303,3 +321,4 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
 
     return result;
 }
+
