@@ -248,7 +248,7 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
                 continue;
             }
 
-            // Try to find matching closing parenthesis with a simple depth counter
+            // Find matching closing parenthesis with a simple depth counter
             let depth = 1;
             let j = i + 1;
 
@@ -268,6 +268,15 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
 
             const closeIndex = j - 1;
             const inner = text.slice(i + 1, closeIndex);
+
+            // If inner already contains explicit LaTeX inline delimiters,
+            // treat the outer parentheses as plain text and let those
+            // inner expressions be handled separately.
+            if (/\\\(/.test(inner) || /\\\)/.test(inner)) {
+                result += ch;
+                i += 1;
+                continue;
+            }
 
             // Collect trailing primes: ( ... )', ( ... )'', etc.
             let k = closeIndex + 1;
@@ -293,8 +302,8 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
             // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
             const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
 
-            // If the remaining text clearly contains natural-language words (any letters, length ≥ 2),
-            // we treat the outer parentheses as text, not maths.
+            // If the remaining text clearly contains natural-language words
+            // (any letters, length ≥ 2), treat the outer parentheses as text.
             if (/\p{L}{2,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
@@ -321,4 +330,5 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
 
     return result;
 }
+
 
