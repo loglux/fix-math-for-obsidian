@@ -133,15 +133,34 @@ function splitByCodeFences(md: string): Segment[] {
  *  - ( ... )             → $ ... $  (only if it looks like maths)
  */
 function convertMath(text: string): string {
-    // 1) \[ ... \]  → $$ ... $$
+    // 1) Convert quoted block formulas:
+    //
+    // > \[
+    // >  ...
+    // > \]
+    //
+    // into:
+    // > $$ ... $$
+    text = text.replace(
+        /^>[ \t]*\\\[[ \t]*\r?\n([\s\S]*?)\r?\n>[ \t]*\\\][ \t]*$/gm,
+        (m, inner) => {
+            const cleaned = inner
+                .split(/\r?\n/)
+                .map(line => line.replace(/^>[ \t]*/, "")) // strip ">" from each inner line
+                .join(" ");
+            return `> $$ ${cleaned.trim()} $$`;
+        }
+    );
+
+    // 2) \[ ... \]  → $$ ... $$
     const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 
-    // 2) Multiline [ ... ] blocks → $$ ... $$ (only when it looks like maths)
+    // 3) Multiline [ ... ] blocks → $$ ... $$ (only when it looks like maths)
     //    Optionally allow a simple Markdown prefix before "[" (e.g. "# ", "> ", "- ").
     const bracketBlockRe =
         /^[ \t]*([#>\-\*\+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
 
-    // 3) \( ... \)  → $ ... $ (backslashed inline math)
+    // 4) \( ... \)  → $ ... $ (backslashed inline math)
     const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
 
     // Heuristic: treat content as maths if it contains:
