@@ -42,18 +42,51 @@ export default class FixMathPlugin extends Plugin {
 
         try {
             const content = await this.app.vault.read(file);
-            const fixed = transformText(content);
+            const result = transformText(content);
 
-            if (fixed === content) {
+            if (result.text === content) {
                 new Notice("No changes required");
+                if (this.statusEl) {
+                    this.statusEl.setText("Fix Math: No changes");
+                    setTimeout(() => {
+                        if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                    }, 3000);
+                }
                 return;
             }
 
-            await this.app.vault.modify(file, fixed);
-            new Notice("Math converted");
+            await this.app.vault.modify(file, result.text);
+
+            // Build statistics message
+            const total = result.stats.inlineCount + result.stats.blockCount;
+            let statsMsg = `Converted ${total} formula${total !== 1 ? 's' : ''}`;
+
+            if (result.stats.inlineCount > 0 && result.stats.blockCount > 0) {
+                statsMsg += ` (${result.stats.inlineCount} inline, ${result.stats.blockCount} block)`;
+            } else if (result.stats.inlineCount > 0) {
+                statsMsg += ` (inline)`;
+            } else if (result.stats.blockCount > 0) {
+                statsMsg += ` (block)`;
+            }
+
+            new Notice(statsMsg);
+
+            // Update status bar
+            if (this.statusEl) {
+                this.statusEl.setText(`Fix Math: ${statsMsg}`);
+                setTimeout(() => {
+                    if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                }, 5000);
+            }
         } catch (err) {
             console.error(err);
             new Notice("Error: failed to process file");
+            if (this.statusEl) {
+                this.statusEl.setText("Fix Math: Error");
+                setTimeout(() => {
+                    if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                }, 3000);
+            }
         }
     }
 }
@@ -64,11 +97,27 @@ export default class FixMathPlugin extends Plugin {
 
 type Segment = { type: "code" | "text"; text: string };
 
-function transformText(md: string): string {
+interface ConversionStats {
+    inlineCount: number;
+    blockCount: number;
+}
+
+function transformText(md: string): { text: string; stats: ConversionStats } {
     const segments = splitByCodeFences(md);
-    return segments
-        .map(seg => (seg.type === "code" ? seg.text : convertMath(seg.text)))
+    const stats: ConversionStats = { inlineCount: 0, blockCount: 0 };
+
+    const result = segments
+        .map(seg => {
+            if (seg.type === "code") {
+                return seg.text;
+            } else {
+                const converted = convertMath(seg.text, stats);
+                return converted;
+            }
+        })
         .join("");
+
+    return { text: result, stats };
 }
 
 /**
@@ -132,7 +181,7 @@ function splitByCodeFences(md: string): Segment[] {
  *  - multi-line [ ... ]  → $$ ... $$ (only if it looks like maths)
  *  - ( ... )             → $ ... $  (only if it looks like maths)
  */
-function convertMath(text: string): string {
+function convertMath(text: string, stats: ConversionStats): string {
     // 1) Convert quoted block formulas:
     //
     // > \[
@@ -148,6 +197,7 @@ function convertMath(text: string): string {
                 .split(/\r?\n/)
                 .map(line => line.replace(/^>[ \t]*/, "")) // strip ">" from each inner line
                 .join(" ");
+            stats.blockCount++;
             return `> $$ ${cleaned.trim()} $$`;
         }
     );
@@ -167,6 +217,7 @@ function convertMath(text: string): string {
     //  - LaTeX markers (\ , _ , ^ , \text{...})
     //  - or obvious math Unicode symbols (→, ∞, ±, ≥, ≤)
     //  - or, if ASCII-ish, a digit AND a maths operator (+-*/=)
+    //  - or simple variable equations like x=y, a<b
     const isMathy = (s: string) => {
         // Explicit mathematical markers: LaTeX commands, subscripts/superscripts, arrows, ∞, ±, ≥, ≤
         if (/[\\_^→∞±≥≤]|\\text\{/.test(s)) {
@@ -174,7 +225,7 @@ function convertMath(text: string): string {
         }
 
         const hasDigit = /\d/.test(s);
-        const hasOp = /[+\-*/=]/.test(s);
+        const hasOp = /[+\-*/=<>]/.test(s);
 
         // Classic case: there are digits AND operators present
         if (hasDigit && hasOp) {
@@ -187,12 +238,20 @@ function convertMath(text: string): string {
             return true;
         }
 
+        // NEW: simple variable equations without digits
+        // Examples: "x=y", "a<b", "f>g", "x = y + z"
+        // Match single letters with operators between them
+        if (/^[a-zA-Z]\s*[=<>+\-*/]\s*[a-zA-Z]/.test(s)) {
+            return true;
+        }
+
         return false;
     };
 
 
     // Convert \[ ... \] → $$ ... $$
     let out = text.replace(displayBackslashRe, (_, pre: string, inner: string) => {
+        stats.blockCount++;
         return `${pre}$$
 ${inner.trim()}
 $$`;
@@ -203,9 +262,13 @@ $$`;
         bracketBlockRe,
         (m: string, prefix: string | undefined, inner: string) => {
             const p = prefix ?? "";
-            return isMathy(inner) ? `${p}$$
+            if (isMathy(inner)) {
+                stats.blockCount++;
+                return `${p}$$
 ${inner.trim()}
-$$` : m;
+$$`;
+            }
+            return m;
         }
     );
 
@@ -220,12 +283,13 @@ $$` : m;
             }
 
             // 1) Convert plain ( ... ) → $ ... $ when it looks like maths
-            let chunk = convertPlainParens(part, isMathy);
+            let chunk = convertPlainParens(part, isMathy, stats);
 
             // 2) Convert \( ... \) → $ ... $
             chunk = chunk.replace(
                 inlineBackslashRe,
                 (_, pre: string, inner: string) => {
+                    stats.inlineCount++;
                     return `${pre}$${inner.trim()}$`;
                 }
             );
@@ -248,7 +312,7 @@ $$` : m;
  *  - "((3x^{2}-3)' = 6x)" → "$((3x^{2}-3)' = 6x)$"
  *  - "(про (3x^{2}-3) в числителе)" → "(про $3x^{2}-3$ в числителе)"
  */
-function convertPlainParens(text: string, isMathy: (s: string) => boolean): string {
+function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats: ConversionStats): string {
     let result = "";
     let i = 0;
 
@@ -338,6 +402,7 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
             }
 
             // This is maths: remove outer parentheses and wrap content in $...$
+            stats.inlineCount++;
             const core = inner.trim() + primes;
             result += `$${core}$`;
             i = k;
@@ -349,5 +414,3 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean): stri
 
     return result;
 }
-
-

@@ -1,9 +1,9 @@
 {
   "id": "fix-math",
   "name": "Fix Math",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "minAppVersion": "1.5.0",
-  "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, skipping code fences.",
+  "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, with smart detection and conversion statistics.",
   "author": "Vladislav Sorokin",
   "authorUrl": "https://github.com/loglux",
   "isDesktopOnly": true
