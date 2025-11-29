@@ -33,6 +33,8 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
     - `(0/0)` – fractions
     - `(3x^{2} - 3 = 0)` – polynomials
     - `(3x^{2} - 3)'` – derivatives with trailing primes
+- **NEW:** Detects single-line bracket math from AI assistants like Windows Copilot:
+    - `[ \frac{a}{b}(c + d) = \frac{ac}{b} + \frac{ad}{b} ]` → converts to display math
 - Supports **quoted block math** in blockquotes (e.g., `> \[...\]`)
 
 ## Supported conversions
@@ -43,6 +45,7 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
 | `\[...\]`                                            | block       | `$$...$$`     |
 | `> \[...\]` *(in blockquotes)*                       | block       | `> $$...$$`   |
 | `[ ... ]` *(if on separate lines and contains math)* | block       | `$$...$$`     |
+| `[ ... ]` *(single line with LaTeX, e.g. from AI)*  | block       | `$$...$$`     |
 | `( ... )` *(if contains math)*                       | inline      | `$...$`       |
 | ` ```...``` ` or `~~~...~~~`                         | code block  | unchanged     |
 
@@ -161,6 +164,29 @@ Simple equations like $x=y$ are also converted.
 > $$ E = mc^2 $$
 ```
 
+### Example 4: Single-line brackets from AI assistants (Windows Copilot, ChatGPT)
+
+**Before:**
+
+```markdown
+The student correctly applied the distributive property:
+[ \frac{a}{b}(c + d) = \frac{a(c + d)}{b} = \frac{ac + ad}{b} = \frac{ac}{b} + \frac{ad}{b} ]
+
+This shows understanding of algebraic fractions.
+```
+
+**After:**
+
+```markdown
+The student correctly applied the distributive property:
+
+$$
+\frac{a}{b}(c + d) = \frac{a(c + d)}{b} = \frac{ac + ad}{b} = \frac{ac}{b} + \frac{ad}{b}
+$$
+
+This shows understanding of algebraic fractions.
+```
+
 ## What gets converted?
 
 The plugin intelligently detects mathematical expressions based on:
@@ -178,6 +204,9 @@ The plugin intelligently detects mathematical expressions based on:
 - **Code blocks**: ` ```math content``` ` – never touched
 - **Existing delimiters**: `$formula$` and `$$formula$$` – already correct
 - **Non-math text**: `(hello world)` – no mathematical indicators
+- **Markdown links**: `[text](url)` and `[text]: url` – recognised as links, not math
+- **Wikilinks**: `[[page name]]` – Obsidian internal links
+- **Footnotes**: `[^ref]` – footnote references
 
 ## Customisation
 

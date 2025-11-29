@@ -179,6 +179,7 @@ function splitByCodeFences(md: string): Segment[] {
  *  - \[ ... \]           → $$ ... $$
  *  - \( ... \)           → $ ... $
  *  - multi-line [ ... ]  → $$ ... $$ (only if it looks like maths)
+ *  - single-line [ ... ] → $$ ... $$ (only if it looks like maths, not Markdown links)
  *  - ( ... )             → $ ... $  (only if it looks like maths)
  */
 function convertMath(text: string, stats: ConversionStats): string {
@@ -210,7 +211,12 @@ function convertMath(text: string, stats: ConversionStats): string {
     const bracketBlockRe =
         /^[ \t]*([#>\-\*\+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
 
-    // 4) \( ... \)  → $ ... $ (backslashed inline math)
+    // 4) Single-line [ ... ] blocks → $$ ... $$ (only when it looks like maths)
+    //    Examples: [ \frac{a}{b}(c + d) = ... ]
+    //    Must not be Markdown links like [text](url) or [[wikilinks]]
+    const hasLaTeXCommand = (s: string) => /\\[a-zA-Z]+/.test(s);
+
+    // 5) \( ... \)  → $ ... $ (backslashed inline math)
     const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
 
     // Heuristic: treat content as maths if it contains:
@@ -269,6 +275,46 @@ ${inner.trim()}
 $$`;
             }
             return m;
+        }
+    );
+
+    // Convert single-line [ ... ] → $$ ... $$ (only if it looks like maths)
+    // Examples: [ \frac{a}{b}(c + d) = ... ]
+    // Must avoid:
+    //  - Markdown links: [text](url) or [text]: url
+    //  - Wikilinks: [[page]]
+    //  - Footnotes: [^ref]
+    out = out.replace(
+        /\[([^\]]+)\]/g,
+        (match: string, inner: string, offset: number, fullText: string) => {
+            // Check what comes after the ]
+            const afterBracket = fullText[offset + match.length];
+
+            // Skip if it's a Markdown link: [text](url) or [text]: url
+            if (afterBracket === '(' || afterBracket === ':') {
+                return match;
+            }
+
+            // Skip if it's a wikilink: [[page]]
+            if (match.startsWith('[[')) {
+                return match;
+            }
+
+            // Skip if it's a footnote: [^ref]
+            if (inner.startsWith('^')) {
+                return match;
+            }
+
+            // Check if it contains LaTeX commands or looks like maths
+            if (hasLaTeXCommand(inner) || isMathy(inner)) {
+                stats.blockCount++;
+                return `$$
+${inner.trim()}
+$$`;
+            }
+
+            // Not maths, leave as-is
+            return match;
         }
     );
 
