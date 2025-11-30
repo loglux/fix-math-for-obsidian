@@ -230,6 +230,11 @@ function convertMath(text: string, stats: ConversionStats): string {
             return true;
         }
 
+        // LaTeX number formatting like 123{,}456 or 1{.}234 (used for thousands separators)
+        if (/\d+\{[,.\s]\}\d+/.test(s)) {
+            return true;
+        }
+
         const hasDigit = /\d/.test(s);
         const hasOp = /[+\-*/=<>]/.test(s);
 

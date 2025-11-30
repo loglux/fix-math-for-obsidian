@@ -33,6 +33,7 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
     - `(0/0)` – fractions
     - `(3x^{2} - 3 = 0)` – polynomials
     - `(3x^{2} - 3)'` – derivatives with trailing primes
+    - `(345{,}678{,}123)` – LaTeX formatted large numbers
 - **NEW:** Detects single-line bracket math from AI assistants like Windows Copilot:
     - `[ \frac{a}{b}(c + d) = \frac{ac}{b} + \frac{ad}{b} ]` → converts to display math
 - Supports **quoted block math** in blockquotes (e.g., `> \[...\]`)
@@ -187,11 +188,30 @@ $$
 This shows understanding of algebraic fractions.
 ```
 
+### Example 5: LaTeX formatted numbers
+
+**Before:**
+
+```markdown
+The population is approximately (7{,}900{,}000{,}000) people.
+
+Scientific notation uses (6{.}022 \times 10^{23}) for Avogadro's number.
+```
+
+**After:**
+
+```markdown
+The population is approximately $7{,}900{,}000{,}000$ people.
+
+Scientific notation uses $6{.}022 \times 10^{23}$ for Avogadro's number.
+```
+
 ## What gets converted?
 
 The plugin intelligently detects mathematical expressions based on:
 
 - **LaTeX commands**: `\to`, `\sin`, `\cos`, `\text{...}`, etc.
+- **LaTeX number formatting**: `123{,}456` (thousands), `1{.}234` (decimals)
 - **Math operators**: `+`, `-`, `*`, `/`, `=`, `<`, `>`
 - **Mathematical symbols**: `_`, `^` (subscript/superscript), `→`, `∞`, `±`, `≥`, `≤`
 - **Numbers with operators**: `3 + 5`, `x^2`
