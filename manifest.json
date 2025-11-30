@@ -3,7 +3,7 @@
   "name": "Fix Math",
   "version": "1.0.9",
   "minAppVersion": "1.5.0",
-  "description": "Convert \\[...\\] to $$...$$ and \\(...\\) to $...$ in the current file, with smart detection and conversion statistics.",
+  "description": "Automatically fix LaTeX math delimiters when copying formulas from ChatGPT, AI assistants, and academic papers into Obsidian.",
   "author": "Vladislav Sorokin",
   "authorUrl": "https://github.com/loglux",
   "isDesktopOnly": true
