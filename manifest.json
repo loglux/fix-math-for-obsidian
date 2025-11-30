@@ -3,7 +3,7 @@
   "name": "Fix Math",
   "version": "1.0.9",
   "minAppVersion": "1.5.0",
-  "description": "Automatically fix LaTeX math delimiters when copying formulas from ChatGPT, AI assistants, and academic papers into Obsidian.",
+  "description": "Convert LaTeX equations from ChatGPT and AI assistants to Obsidian format: block equations to display math, inline to inline math.",
   "author": "Vladislav Sorokin",
   "authorUrl": "https://github.com/loglux",
   "isDesktopOnly": true
