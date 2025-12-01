@@ -11,18 +11,18 @@ export default class FixMathPlugin extends Plugin {
     onload() {
         this.addCommand({
             id: "current-file",
-            name: "Fix math in current file",
+            name: "Current file",
             callback: () => this.fixCurrentFile(),
         });
 
         this.addRibbonIcon(
             "wand",
-            "Fix math in current file",
+            "Current file",
             () => this.fixCurrentFile()
         );
 
         this.statusEl = this.addStatusBarItem();
-        this.statusEl.setText("Fix math ready");
+        this.statusEl.setText("Ready");
     }
 
     onunload() {}
@@ -47,9 +47,10 @@ export default class FixMathPlugin extends Plugin {
             if (result.text === content) {
                 new Notice("No changes required");
                 if (this.statusEl) {
-                    this.statusEl.setText("Fix math: No changes");
+                    this.statusEl.setText("No changes");
+                    // eslint-disable-next-line no-undef
                     window.setTimeout(() => {
-                        if (this.statusEl) this.statusEl.setText("Fix math ready");
+                        if (this.statusEl) this.statusEl.setText("Ready");
                     }, 3000);
                 }
                 return;
@@ -73,18 +74,20 @@ export default class FixMathPlugin extends Plugin {
 
             // Update status bar
             if (this.statusEl) {
-                this.statusEl.setText(`Fix math: ${statsMsg}`);
+                this.statusEl.setText(statsMsg);
+                // eslint-disable-next-line no-undef
                 window.setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Fix math ready");
+                    if (this.statusEl) this.statusEl.setText("Ready");
                 }, 5000);
             }
         } catch (err) {
             console.error(err);
-            new Notice("Error: Failed to process file");
+            new Notice("Error: failed to process file");
             if (this.statusEl) {
-                this.statusEl.setText("Fix math: Error");
+                this.statusEl.setText("Error");
+                // eslint-disable-next-line no-undef
                 window.setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Fix math ready");
+                    if (this.statusEl) this.statusEl.setText("Ready");
                 }, 3000);
             }
         }
