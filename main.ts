@@ -10,19 +10,19 @@ export default class FixMathPlugin extends Plugin {
 
     onload() {
         this.addCommand({
-            id: "fix-math-current-file",
-            name: "Fix math (current file)",
+            id: "current-file",
+            name: "Fix math in current file",
             callback: () => this.fixCurrentFile(),
         });
 
         this.addRibbonIcon(
             "wand",
-            "Fix math (current file)",
+            "Fix math in current file",
             () => this.fixCurrentFile()
         );
 
         this.statusEl = this.addStatusBarItem();
-        this.statusEl.setText("Fix Math ready");
+        this.statusEl.setText("Fix math ready");
     }
 
     onunload() {}
@@ -47,9 +47,9 @@ export default class FixMathPlugin extends Plugin {
             if (result.text === content) {
                 new Notice("No changes required");
                 if (this.statusEl) {
-                    this.statusEl.setText("Fix Math: No changes");
-                    setTimeout(() => {
-                        if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                    this.statusEl.setText("Fix math: No changes");
+                    window.setTimeout(() => {
+                        if (this.statusEl) this.statusEl.setText("Fix math ready");
                     }, 3000);
                 }
                 return;
@@ -73,18 +73,18 @@ export default class FixMathPlugin extends Plugin {
 
             // Update status bar
             if (this.statusEl) {
-                this.statusEl.setText(`Fix Math: ${statsMsg}`);
-                setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                this.statusEl.setText(`Fix math: ${statsMsg}`);
+                window.setTimeout(() => {
+                    if (this.statusEl) this.statusEl.setText("Fix math ready");
                 }, 5000);
             }
         } catch (err) {
             console.error(err);
-            new Notice("Error: failed to process file");
+            new Notice("Error: Failed to process file");
             if (this.statusEl) {
-                this.statusEl.setText("Fix Math: Error");
-                setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Fix Math ready");
+                this.statusEl.setText("Fix math: Error");
+                window.setTimeout(() => {
+                    if (this.statusEl) this.statusEl.setText("Fix math ready");
                 }, 3000);
             }
         }
@@ -193,10 +193,10 @@ function convertMath(text: string, stats: ConversionStats): string {
     // > $$ ... $$
     text = text.replace(
         /^>[ \t]*\\\[[ \t]*\r?\n([\s\S]*?)\r?\n>[ \t]*\\\][ \t]*$/gm,
-        (m, inner) => {
+        (_match: string, inner: string) => {
             const cleaned = inner
                 .split(/\r?\n/)
-                .map(line => line.replace(/^>[ \t]*/, "")) // strip ">" from each inner line
+                .map((line: string) => line.replace(/^>[ \t]*/, "")) // strip ">" from each inner line
                 .join(" ");
             stats.blockCount++;
             return `> $$ ${cleaned.trim()} $$`;
@@ -209,7 +209,7 @@ function convertMath(text: string, stats: ConversionStats): string {
     // 3) Multiline [ ... ] blocks → $$ ... $$ (only when it looks like maths)
     //    Optionally allow a simple Markdown prefix before "[" (e.g. "# ", "> ", "- ").
     const bracketBlockRe =
-        /^[ \t]*([#>\-\*\+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
+        /^[ \t]*([#>\-*+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
 
     // 4) Single-line [ ... ] blocks → $$ ... $$ (only when it looks like maths)
     //    Examples: [ \frac{a}{b}(c + d) = ... ]
