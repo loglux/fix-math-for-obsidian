@@ -246,16 +246,24 @@ function convertMath(text: string, stats: ConversionStats): string {
             return true;
         }
 
-        // NEW: a pure number (possibly with a minus sign and/or a decimal part) also counts as maths
+        // A pure number (possibly with a minus sign and/or a decimal part) also counts as maths
         // Examples: "0", "-1", "3.14"
         if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
             return true;
         }
 
-        // NEW: simple variable equations without digits
+        // Simple variable equations without digits
         // Examples: "x=y", "a<b", "f>g", "x = y + z"
         // Match single letters with operators between them
         if (/^[a-zA-Z]\s*[=<>+\-*/]\s*[a-zA-Z]/.test(s)) {
+            return true;
+        }
+
+        // Algebraic expressions with variables and operators (but not prose)
+        // Examples: "n(k-n)", "a+b", "x*y", "2n+k"
+        const hasLetters = /[a-zA-Z]/.test(s);
+        const hasWords = /\b[a-zA-Z]{2,}\b/.test(s);
+        if (hasLetters && hasOp && !hasWords) {
             return true;
         }
 

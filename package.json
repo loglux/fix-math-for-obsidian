@@ -1,8 +1,11 @@
 {
   "name": "fix-math",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "scripts": {
-    "build": "esbuild main.ts --bundle --outfile=main.js --format=cjs --platform=node --external:obsidian"
+    "build": "esbuild main.ts --bundle --outfile=main.js --format=cjs --platform=node --external:obsidian",
+    "lint": "eslint main.ts --ext .ts",
+    "lint:fix": "eslint main.ts --ext .ts --fix",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.48.0",
