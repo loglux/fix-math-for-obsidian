@@ -12,7 +12,16 @@ export default class FixMathPlugin extends Plugin {
         this.addCommand({
             id: "current-file",
             name: "Current file",
-            callback: () => this.fixCurrentFile(),
+            checkCallback: (checking: boolean) => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (view) {
+                    if (!checking) {
+                        void this.fixCurrentFile();
+                    }
+                    return true;
+                }
+                return false;
+            },
         });
 
         this.addRibbonIcon(
@@ -29,67 +38,61 @@ export default class FixMathPlugin extends Plugin {
 
     async fixCurrentFile() {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) {
+        if (!view || !view.file) {
             new Notice("No active Markdown file");
             return;
         }
 
-        const file = view.file;
-        if (!file) {
-            new Notice("No file to process");
-            return;
-        }
-
         try {
-            const content = await this.app.vault.read(file);
-            const result = transformText(content);
+            let originalContent = "";
+            let newContent = "";
+            let stats: ConversionStats = { inlineCount: 0, blockCount: 0 };
 
-            if (result.text === content) {
+            await this.app.vault.process(view.file, (content) => {
+                originalContent = content;
+                const result = transformText(content);
+                stats = result.stats;
+                newContent = result.text;
+                return result.text;
+            });
+
+            const hasChanges = originalContent !== newContent;
+            const total = stats.inlineCount + stats.blockCount;
+
+            if (!hasChanges || total === 0) {
                 new Notice("No changes required");
-                if (this.statusEl) {
-                    this.statusEl.setText("No changes");
-                    // eslint-disable-next-line no-undef
-                    window.setTimeout(() => {
-                        if (this.statusEl) this.statusEl.setText("Ready");
-                    }, 3000);
-                }
+                this.updateStatusBar("No changes", 3000);
                 return;
             }
 
-            await this.app.vault.modify(file, result.text);
-
             // Build statistics message
-            const total = result.stats.inlineCount + result.stats.blockCount;
             let statsMsg = `Converted ${total} formula${total !== 1 ? 's' : ''}`;
 
-            if (result.stats.inlineCount > 0 && result.stats.blockCount > 0) {
-                statsMsg += ` (${result.stats.inlineCount} inline, ${result.stats.blockCount} block)`;
-            } else if (result.stats.inlineCount > 0) {
+            if (stats.inlineCount > 0 && stats.blockCount > 0) {
+                statsMsg += ` (${stats.inlineCount} inline, ${stats.blockCount} block)`;
+            } else if (stats.inlineCount > 0) {
                 statsMsg += ` (inline)`;
-            } else if (result.stats.blockCount > 0) {
+            } else if (stats.blockCount > 0) {
                 statsMsg += ` (block)`;
             }
 
             new Notice(statsMsg);
+            this.updateStatusBar(statsMsg, 5000);
 
-            // Update status bar
-            if (this.statusEl) {
-                this.statusEl.setText(statsMsg);
-                // eslint-disable-next-line no-undef
-                window.setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Ready");
-                }, 5000);
-            }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
             new Notice("Error: failed to process file");
-            if (this.statusEl) {
-                this.statusEl.setText("Error");
-                // eslint-disable-next-line no-undef
-                window.setTimeout(() => {
-                    if (this.statusEl) this.statusEl.setText("Ready");
-                }, 3000);
-            }
+            this.updateStatusBar("Error", 3000);
+        }
+    }
+
+    private updateStatusBar(text: string, resetAfter: number) {
+        if (this.statusEl) {
+            this.statusEl.setText(text);
+            // eslint-disable-next-line no-undef
+            window.setTimeout(() => {
+                if (this.statusEl) this.statusEl.setText("Ready");
+            }, resetAfter);
         }
     }
 }
@@ -177,7 +180,7 @@ function splitByCodeFences(md: string): Segment[] {
 }
 
 /**
- * Convert LaTeX-style delimiters and math-like parentheses in a non-code segment.
+ * Convert LaTeX-style delimiters and maths-like parentheses in a non-code segment.
  *
  *  - \[ ... \]           → $$ ... $$
  *  - \( ... \)           → $ ... $
@@ -186,7 +189,7 @@ function splitByCodeFences(md: string): Segment[] {
  *  - ( ... )             → $ ... $  (only if it looks like maths)
  */
 function convertMath(text: string, stats: ConversionStats): string {
-    // 1) Convert quoted block formulas:
+    // 1) Convert quoted block formulae:
     //
     // > \[
     // >  ...
@@ -219,12 +222,12 @@ function convertMath(text: string, stats: ConversionStats): string {
     //    Must not be Markdown links like [text](url) or [[wikilinks]]
     const hasLaTeXCommand = (s: string) => /\\[a-zA-Z]+/.test(s);
 
-    // 5) \( ... \)  → $ ... $ (backslashed inline math)
+    // 5) \( ... \)  → $ ... $ (backslashed inline maths)
     const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
 
     // Heuristic: treat content as maths if it contains:
     //  - LaTeX markers (\ , _ , ^ , \text{...})
-    //  - or obvious math Unicode symbols (→, ∞, ±, ≥, ≤)
+    //  - or obvious maths Unicode symbols (→, ∞, ±, ≥, ≤)
     //  - or, if ASCII-ish, a digit AND a maths operator (+-*/=)
     //  - or simple variable equations like x=y, a<b
     const isMathy = (s: string) => {
