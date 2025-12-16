@@ -242,7 +242,7 @@ function convertMath(text: string, stats: ConversionStats): string {
         }
 
         const hasDigit = /\d/.test(s);
-        const hasOp = /[+\-*/=<>]/.test(s);
+        const hasOp = /[+\-*/=<>,]/.test(s);
 
         // Classic case: there are digits AND operators present
         if (hasDigit && hasOp) {
@@ -450,9 +450,12 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
             const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
 
-            // If the remaining text clearly contains natural-language words
-            // (any letters, length ≥ 2), treat the outer parentheses as text.
-            if (/\p{L}{2,}/u.test(innerWithoutCommands)) {
+            // Check for natural language: look for words with 3+ consecutive letters (any language)
+            // This detects actual words but not short math variable names
+            // Examples that match: "самое" (5 letters), "about" (5 letters), "про" (3 letters)
+            // Examples that don't match: "ax" (2 letters), "bx" (2 letters), "y" (1 letter)
+            // Uses Unicode property \p{L} to support all languages (Latin, Cyrillic, Greek, etc.)
+            if (/\p{L}{3,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
                 continue;
