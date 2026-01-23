@@ -100,6 +100,31 @@ The plugin does not set a default hotkey, but you can add one yourself:
 
 This makes it very convenient to fix maths in the current note with a single key press.
 
+## Tips for copying from AI assistants
+
+### Copying with math delimiters preserved
+
+When copying content from **ChatGPT**, **Claude**, **OpenWebUI**, or similar AI assistants:
+
+- **Always use the "Copy" button** located at the bottom-left of the generated response (usually appears on hover)
+- This ensures math expressions are copied with their LaTeX delimiters `\( ... \)` and `\[ ... \]`
+- Once pasted into Obsidian, simply run this plugin to convert them to `$ ... $` and `$$ ... $$`
+
+### If you already pasted text without delimiters
+
+If you've already pasted text and the math expressions don't have any delimiters (just plain LaTeX commands like `\frac{a}{b}` or `\sum_{i=1}^n`):
+
+1. **Select the math expression** with your mouse or keyboard
+2. Press **Shift + $$** to wrap it in block math delimiters (`$$ ... $$`)
+   - For inline math, use **Shift + $** to wrap in inline delimiters (`$ ... $`)
+
+This is Obsidian's built-in feature for wrapping selected text in math delimiters.
+
+**Example:**
+- Select: `\frac{a}{b} = \frac{c}{d}`
+- Press: **Shift + $$**
+- Result: `$$\frac{a}{b} = \frac{c}{d}$$`
+
 ## Examples
 
 ### Example 1: Basic LaTeX conversion
