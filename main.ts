@@ -471,12 +471,16 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
             const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
 
+            // If there are LaTeX commands, it's definitely math - skip natural language check
+            const hasLaTeXCommand = /\\[a-zA-Z]+/.test(inner);
+
             // Check for natural language: look for words with 3+ consecutive letters (any language)
             // This detects actual words but not short math variable names
             // Examples that match: "самое" (5 letters), "about" (5 letters), "про" (3 letters)
             // Examples that don't match: "ax" (2 letters), "bx" (2 letters), "y" (1 letter)
             // Uses Unicode property \p{L} to support all languages (Latin, Cyrillic, Greek, etc.)
-            if (/\p{L}{3,}/u.test(innerWithoutCommands)) {
+            // But only if there are no LaTeX commands (which indicate it's math)
+            if (!hasLaTeXCommand && /\p{L}{3,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
                 continue;
