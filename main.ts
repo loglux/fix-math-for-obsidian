@@ -209,6 +209,27 @@ function convertMath(text: string, stats: ConversionStats): string {
         }
     );
 
+    // 1.5) Collapse multiline quoted bracket blocks into single line:
+    //
+    // > [
+    // > content
+    // > ]
+    //
+    // into:
+    // > [ content ]
+    //
+    // Then the existing single-line bracket handler will process it.
+    text = text.replace(
+        /^>[ \t]*\[[ \t]*\r?\n([\s\S]*?)\r?\n>[ \t]*\][ \t]*$/gm,
+        (_match: string, inner: string) => {
+            const cleaned = inner
+                .split(/\r?\n/)
+                .map((line: string) => line.replace(/^>[ \t]*/, ""))
+                .join(" ");
+            return `> [ ${cleaned.trim()} ]`;
+        }
+    );
+
     // 2) \[ ... \]  → $$ ... $$
     const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 

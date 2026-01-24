@@ -36,7 +36,9 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
     - `(345{,}678{,}123)` – LaTeX formatted large numbers
 - **NEW:** Detects single-line bracket math from AI assistants like Windows Copilot:
     - `[ \frac{a}{b}(c + d) = \frac{ac}{b} + \frac{ad}{b} ]` → converts to display math
-- Supports **quoted block math** in blockquotes (e.g., `> \[...\]`)
+- Supports **quoted block math** in blockquotes:
+    - `> \[...\]` (quoted backslash blocks)
+    - `> [...]` (quoted bracket blocks) – handles multi-line quoted brackets from AI assistants
 
 ## Supported conversions
 
@@ -44,7 +46,8 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
 | ---------------------------------------------------- | ----------- | ------------- |
 | `\(...\)`                                            | inline      | `$...$`       |
 | `\[...\]`                                            | block       | `$$...$$`     |
-| `> \[...\]` *(in blockquotes)*                       | block       | `> $$...$$`   |
+| `> \[...\]` *(quoted backslash block)*               | block       | `> $$...$$`   |
+| `> [...]` *(quoted bracket block, multi-line)*       | block       | `> $$...$$`   |
 | `[ ... ]` *(if on separate lines and contains math)* | block       | `$$...$$`     |
 | `[ ... ]` *(single line with LaTeX, e.g. from AI)*  | block       | `$$...$$`     |
 | `( ... )` *(if contains math)*                       | inline      | `$...$`       |
@@ -172,7 +175,7 @@ $0/0$ is an indeterminate form, and $(3x^{2}-3)' = 6x$.
 Simple equations like $x=y$ are also converted.
 ```
 
-### Example 3: Quoted block math
+### Example 3: Quoted block math (backslash format)
 
 **Before:**
 
@@ -190,7 +193,29 @@ Simple equations like $x=y$ are also converted.
 > $$ E = mc^2 $$
 ```
 
-### Example 4: Single-line brackets from AI assistants (Windows Copilot, ChatGPT)
+### Example 4: Quoted bracket blocks (from AI assistants in blockquotes)
+
+**Before:**
+
+```markdown
+> You can use the expression
+> [
+> \cos(\angle DEF) = \frac{-92.99}{163.48}
+> ]
+> to find the angle.
+```
+
+**After:**
+
+```markdown
+> You can use the expression
+> $$
+\cos(\angle DEF) = \frac{-92.99}{163.48}
+$$
+> to find the angle.
+```
+
+### Example 5: Single-line brackets from AI assistants (Windows Copilot, ChatGPT)
 
 **Before:**
 
@@ -213,7 +238,7 @@ $$
 This shows understanding of algebraic fractions.
 ```
 
-### Example 5: LaTeX formatted numbers
+### Example 6: LaTeX formatted numbers
 
 **Before:**
 

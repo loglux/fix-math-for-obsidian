@@ -1,7 +1,7 @@
 {
   "id": "fix-math",
   "name": "Fix Math",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "minAppVersion": "1.5.0",
   "description": "Convert LaTeX equations from ChatGPT and AI assistants to Obsidian format: block equations to display math, inline to inline math.",
   "author": "Vladislav Sorokin",
