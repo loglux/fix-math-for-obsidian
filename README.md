@@ -33,6 +33,7 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
     - `(0/0)` – fractions
     - `(3x^{2} - 3 = 0)` – polynomials
     - `(3x^{2} - 3)'` – derivatives with trailing primes
+    - `(p)` – single-letter variables
     - `(345{,}678{,}123)` – LaTeX formatted large numbers
 - **NEW:** Detects single-line bracket math from AI assistants like Windows Copilot:
     - `[ \frac{a}{b}(c + d) = \frac{ac}{b} + \frac{ad}{b} ]` → converts to display math
@@ -266,6 +267,7 @@ The plugin intelligently detects mathematical expressions based on:
 - **Mathematical symbols**: `_`, `^` (subscript/superscript), `→`, `∞`, `±`, `≥`, `≤`
 - **Numbers with operators**: `3 + 5`, `x^2`
 - **Pure numbers**: `0`, `-1`, `3.14`
+- **Single-letter variables**: `p`, `v`, `x'`
 - **Variable equations**: `x=y`, `a<b`, `f>g`
 
 ## What stays unchanged?

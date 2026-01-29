@@ -276,6 +276,11 @@ function convertMath(text: string, stats: ConversionStats): string {
             return true;
         }
 
+        // Single-letter variables (optionally with primes), e.g. "(p)" or "(x')"
+        if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
+            return true;
+        }
+
         // Simple variable equations without digits
         // Examples: "x=y", "a<b", "f>g", "x = y + z"
         // Match single letters with operators between them
@@ -318,6 +323,37 @@ $$`;
         }
     );
 
+    // Convert single-line [ ... ] that contain \left[ ... \right] → $$ ... $$
+    // This avoids breaking on the inner "]" from \right].
+    out = out.replace(
+        /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
+        (match: string, offset: number, fullText: string) => {
+            const afterBracket = fullText[offset + match.length];
+
+            // Skip if it's a Markdown link: [text](url) or [text]: url
+            if (afterBracket === "(" || afterBracket === ":") {
+                return match;
+            }
+
+            // Skip if it's a wikilink: [[page]]
+            if (match.startsWith("[[")) {
+                return match;
+            }
+
+            const inner = match.slice(1, -1);
+
+            // Skip if it's a footnote: [^ref]
+            if (inner.startsWith("^")) {
+                return match;
+            }
+
+            stats.blockCount++;
+            return `$$
+${inner.trim()}
+$$`;
+        }
+    );
+
     // Convert single-line [ ... ] → $$ ... $$ (only if it looks like maths)
     // Examples: [ \frac{a}{b}(c + d) = ... ]
     // Must avoid:
@@ -327,11 +363,17 @@ $$`;
     out = out.replace(
         /\[([^\]]+)\]/g,
         (match: string, inner: string, offset: number, fullText: string) => {
+            const before = fullText.slice(0, offset);
             // Check what comes after the ]
             const afterBracket = fullText[offset + match.length];
 
             // Skip if it's a Markdown link: [text](url) or [text]: url
             if (afterBracket === '(' || afterBracket === ':') {
+                return match;
+            }
+
+            // Skip if this is part of \left[ ... \right]
+            if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) {
                 return match;
             }
 
@@ -459,7 +501,7 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             const afterIsDelim =
                 after === "" ||
                 isWhitespace(after) ||
-                ").,;:?!".includes(after);
+                ").,;:?!*_".includes(after);
 
             // If it does not look like a delimiter, treat "(" as normal and move on.
             if (!afterIsDelim) {
@@ -471,7 +513,6 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
             const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
 
-            // If there are LaTeX commands, it's definitely math - skip natural language check
             const hasLaTeXCommand = /\\[a-zA-Z]+/.test(inner);
 
             // Check for natural language: look for words with 3+ consecutive letters (any language)
@@ -479,8 +520,8 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             // Examples that match: "самое" (5 letters), "about" (5 letters), "про" (3 letters)
             // Examples that don't match: "ax" (2 letters), "bx" (2 letters), "y" (1 letter)
             // Uses Unicode property \p{L} to support all languages (Latin, Cyrillic, Greek, etc.)
-            // But only if there are no LaTeX commands (which indicate it's math)
-            if (!hasLaTeXCommand && /\p{L}{3,}/u.test(innerWithoutCommands)) {
+            // If words are present, treat as plain text even if there are LaTeX commands inside.
+            if (/\p{L}{3,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
                 continue;
