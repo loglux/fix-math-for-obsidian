@@ -230,6 +230,20 @@ function convertMath(text: string, stats: ConversionStats): string {
         }
     );
 
+    // 1.6) Strip ChatGPT heading artifact before math block openers:
+    //
+    // # [          →  [
+    // content          content
+    // ]                ]
+    //
+    // ChatGPT sometimes exports display math with "# [" on its own line.
+    // Remove the "#" so the existing bracketBlockRe handles it normally.
+    text = text.replace(/^#[ \t]*(\[[ \t]*)$/gm, (_m, bracket: string) => bracket);
+
+    // 1.7) Strip "#" from LaTeX commands at line start (ChatGPT artifact):
+    // "# \begin{pmatrix}" → "\begin{pmatrix}"
+    text = text.replace(/^#[ \t]*(\\begin\{)/gm, '$1');
+
     // 2) \[ ... \]  → $$ ... $$
     const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 
@@ -398,6 +412,25 @@ $$`;
             // Not maths, leave as-is
             return match;
         }
+    );
+
+    // Fix malformed content inside $$ blocks from ChatGPT exports:
+    //   - trailing "\" at end of line → "\\" (broken matrix row separators)
+    //   - "\" before digit or minus → "\\" (compact column vectors)
+    //   - "====..." on its own line → "=" (setext-heading artifact for "=")
+    //   - "## formula" at line start → "formula\n-"
+    //     ChatGPT marks terms followed by subtraction with "##".
+    //     Remove the prefix and append "-" on the next line.
+    //   - "+,formula" or "-,formula" → "+formula" / "-formula"
+    //     ChatGPT uses comma after sign as separator artifact.
+    out = out.replace(/\$\$([\s\S]*?)\$\$/g, (block: string) =>
+        block
+            .replace(/(?<!\\)\\[ \t]*$/gm, "\\\\")
+            .replace(/(?<!\\)\\(?=[0-9-])/g, "\\\\")
+            .replace(/^={3,}$/gm, "=")
+            .replace(/^-{3,}$/gm, "-")
+            .replace(/^#{1,6}[ \t]+(.*)/gm, "$1\n-")
+            .replace(/^([+-]),/gm, "$1")
     );
 
     // At this point, all block maths are in $$ ... $$.

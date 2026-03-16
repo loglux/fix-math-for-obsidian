@@ -106,6 +106,14 @@ This makes it very convenient to fix maths in the current note with a single key
 
 ## Tips for copying from AI assistants
 
+### Recommended Obsidian setting
+
+For best results with AI-generated math content, go to **Settings → Editor** and **disable** the option **"Convert HTML content to Markdown on paste"**.
+
+With this setting off, pasted content keeps its original structure — bracket math blocks `[...]`, matrix row separators `\\`, and equation signs `=` are all preserved as exported. The plugin then handles all known ChatGPT export artefacts automatically.
+
+> If you prefer to keep the setting enabled, the plugin also handles the different artefacts produced by that mode.
+
 ### Copying with math delimiters preserved
 
 When copying content from **ChatGPT**, **Claude**, **OpenWebUI**, or similar AI assistants:
