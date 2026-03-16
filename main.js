@@ -229,52 +229,53 @@ $$`;
       return m;
     }
   );
-  out = out.replace(
-    /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
-    (match, offset, fullText) => {
-      const afterBracket = fullText[offset + match.length];
-      if (afterBracket === "(" || afterBracket === ":") {
-        return match;
-      }
-      if (match.startsWith("[[")) {
-        return match;
-      }
-      const inner = match.slice(1, -1);
-      if (inner.startsWith("^")) {
-        return match;
-      }
-      stats.blockCount++;
-      return `$$
+  {
+    const bracketParts = out.split(/(\$\$[\s\S]*?\$\$)/);
+    out = bracketParts.map((part, idx) => {
+      if (idx % 2 === 1)
+        return part;
+      let p = part.replace(
+        /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
+        (match, offset, fullText) => {
+          const afterBracket = fullText[offset + match.length];
+          if (afterBracket === "(" || afterBracket === ":")
+            return match;
+          if (match.startsWith("[["))
+            return match;
+          const inner = match.slice(1, -1);
+          if (inner.startsWith("^"))
+            return match;
+          stats.blockCount++;
+          return `$$
 ${inner.trim()}
 $$`;
-    }
-  );
-  out = out.replace(
-    /\[([^\]]+)\]/g,
-    (match, inner, offset, fullText) => {
-      const before = fullText.slice(0, offset);
-      const afterBracket = fullText[offset + match.length];
-      if (afterBracket === "(" || afterBracket === ":") {
-        return match;
-      }
-      if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) {
-        return match;
-      }
-      if (match.startsWith("[[")) {
-        return match;
-      }
-      if (inner.startsWith("^")) {
-        return match;
-      }
-      if (hasLaTeXCommand(inner) || isMathy(inner)) {
-        stats.blockCount++;
-        return `$$
+        }
+      );
+      p = p.replace(
+        /\[([^\]]+)\]/g,
+        (match, inner, offset, fullText) => {
+          const before = fullText.slice(0, offset);
+          const afterBracket = fullText[offset + match.length];
+          if (afterBracket === "(" || afterBracket === ":")
+            return match;
+          if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner))
+            return match;
+          if (match.startsWith("[["))
+            return match;
+          if (inner.startsWith("^"))
+            return match;
+          if (hasLaTeXCommand(inner) || isMathy(inner)) {
+            stats.blockCount++;
+            return `$$
 ${inner.trim()}
 $$`;
-      }
-      return match;
-    }
-  );
+          }
+          return match;
+        }
+      );
+      return p;
+    }).join("");
+  }
   out = out.replace(
     /\$\$([\s\S]*?)\$\$/g,
     (block) => block.replace(/(?<!\\)\\[ \t]*$/gm, "\\\\").replace(/(?<!\\)\\(?=[0-9-])/g, "\\\\").replace(/^={3,}$/gm, "=").replace(/^-{3,}$/gm, "-").replace(/^#{1,6}[ \t]+(.*)/gm, "$1\n-").replace(/^([+-]),/gm, "$1")

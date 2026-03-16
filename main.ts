@@ -337,82 +337,51 @@ $$`;
         }
     );
 
-    // Convert single-line [ ... ] that contain \left[ ... \right] → $$ ... $$
-    // This avoids breaking on the inner "]" from \right].
-    out = out.replace(
-        /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
-        (match: string, offset: number, fullText: string) => {
-            const afterBracket = fullText[offset + match.length];
+    // Apply single-line [ ... ] handlers only to text OUTSIDE existing $$ blocks.
+    // This prevents converting brackets that are already inside a $$ block
+    // (e.g. \mathbf{X}=[\mathbf{1}\ \mathbf{S}] inside a multiline $$ block).
+    {
+        const bracketParts = out.split(/(\$\$[\s\S]*?\$\$)/);
+        out = bracketParts.map((part: string, idx: number) => {
+            if (idx % 2 === 1) return part; // inside $$ — skip
 
-            // Skip if it's a Markdown link: [text](url) or [text]: url
-            if (afterBracket === "(" || afterBracket === ":") {
-                return match;
-            }
+            // Convert single-line [ ... ] that contain \left[ ... \right] → $$ ... $$
+            // This avoids breaking on the inner "]" from \right].
+            let p = part.replace(
+                /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
+                (match: string, offset: number, fullText: string) => {
+                    const afterBracket = fullText[offset + match.length];
+                    if (afterBracket === "(" || afterBracket === ":") return match;
+                    if (match.startsWith("[[")) return match;
+                    const inner = match.slice(1, -1);
+                    if (inner.startsWith("^")) return match;
+                    stats.blockCount++;
+                    return `$$\n${inner.trim()}\n$$`;
+                }
+            );
 
-            // Skip if it's a wikilink: [[page]]
-            if (match.startsWith("[[")) {
-                return match;
-            }
+            // Convert single-line [ ... ] → $$ ... $$ (only if it looks like maths)
+            // Must avoid Markdown links, wikilinks, footnotes.
+            p = p.replace(
+                /\[([^\]]+)\]/g,
+                (match: string, inner: string, offset: number, fullText: string) => {
+                    const before = fullText.slice(0, offset);
+                    const afterBracket = fullText[offset + match.length];
+                    if (afterBracket === '(' || afterBracket === ':') return match;
+                    if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) return match;
+                    if (match.startsWith('[[')) return match;
+                    if (inner.startsWith('^')) return match;
+                    if (hasLaTeXCommand(inner) || isMathy(inner)) {
+                        stats.blockCount++;
+                        return `$$\n${inner.trim()}\n$$`;
+                    }
+                    return match;
+                }
+            );
 
-            const inner = match.slice(1, -1);
-
-            // Skip if it's a footnote: [^ref]
-            if (inner.startsWith("^")) {
-                return match;
-            }
-
-            stats.blockCount++;
-            return `$$
-${inner.trim()}
-$$`;
-        }
-    );
-
-    // Convert single-line [ ... ] → $$ ... $$ (only if it looks like maths)
-    // Examples: [ \frac{a}{b}(c + d) = ... ]
-    // Must avoid:
-    //  - Markdown links: [text](url) or [text]: url
-    //  - Wikilinks: [[page]]
-    //  - Footnotes: [^ref]
-    out = out.replace(
-        /\[([^\]]+)\]/g,
-        (match: string, inner: string, offset: number, fullText: string) => {
-            const before = fullText.slice(0, offset);
-            // Check what comes after the ]
-            const afterBracket = fullText[offset + match.length];
-
-            // Skip if it's a Markdown link: [text](url) or [text]: url
-            if (afterBracket === '(' || afterBracket === ':') {
-                return match;
-            }
-
-            // Skip if this is part of \left[ ... \right]
-            if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) {
-                return match;
-            }
-
-            // Skip if it's a wikilink: [[page]]
-            if (match.startsWith('[[')) {
-                return match;
-            }
-
-            // Skip if it's a footnote: [^ref]
-            if (inner.startsWith('^')) {
-                return match;
-            }
-
-            // Check if it contains LaTeX commands or looks like maths
-            if (hasLaTeXCommand(inner) || isMathy(inner)) {
-                stats.blockCount++;
-                return `$$
-${inner.trim()}
-$$`;
-            }
-
-            // Not maths, leave as-is
-            return match;
-        }
-    );
+            return p;
+        }).join("");
+    }
 
     // Fix malformed content inside $$ blocks from ChatGPT exports:
     //   - trailing "\" at end of line → "\\" (broken matrix row separators)
