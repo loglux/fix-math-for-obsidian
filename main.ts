@@ -290,8 +290,11 @@ function convertMath(text: string, stats: ConversionStats): string {
             return true;
         }
 
-        // Single-letter variables (optionally with primes), e.g. "(p)" or "(x')"
+        // Single-letter variables or uppercase geometry notation: (p), (x'), (DEM), (EM)
         if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
+            return true;
+        }
+        if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
             return true;
         }
 
@@ -514,14 +517,12 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
 
             // Ignore LaTeX commands like \to, \sin, \cos when checking for "words"
             const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
+            const hasLaTeXCommand = /\\[a-zA-Z]+/.test(inner);
 
-            // Check for natural language: look for words with 3+ consecutive letters (any language)
-            // This detects actual words but not short math variable names
-            // Examples that match: "самое" (5 letters), "about" (5 letters), "про" (3 letters)
-            // Examples that don't match: "ax" (2 letters), "bx" (2 letters), "y" (1 letter)
-            // Uses Unicode property \p{L} to support all languages (Latin, Cyrillic, Greek, etc.)
-            // If words are present, treat as plain text even if there are LaTeX commands inside.
-            if (/\p{L}{3,}/u.test(innerWithoutCommands)) {
+            // Check for natural language: look for words with 3+ consecutive LOWERCASE letters.
+            // Uppercase-only sequences like (DEM), (EM) are geometry/math notation, not prose.
+            // Skip this check if LaTeX commands are present — e.g. (\angle DEM=40^\circ) should convert.
+            if (!hasLaTeXCommand && /\p{Ll}{3,}/u.test(innerWithoutCommands)) {
                 result += ch;
                 i += 1;
                 continue;

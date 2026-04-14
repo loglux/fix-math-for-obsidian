@@ -200,6 +200,9 @@ function convertMath(text, stats) {
     if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
       return true;
     }
+    if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
+      return true;
+    }
     if (/^[a-zA-Z]\s*[=<>+\-*/]\s*[a-zA-Z]/.test(s)) {
       return true;
     }
@@ -346,7 +349,8 @@ function convertPlainParens(text, isMathy, stats) {
         continue;
       }
       const innerWithoutCommands = inner.replace(/\\[A-Za-z]+/g, "");
-      if (/\p{L}{3,}/u.test(innerWithoutCommands)) {
+      const hasLaTeXCommand = /\\[a-zA-Z]+/.test(inner);
+      if (!hasLaTeXCommand && /\p{Ll}{3,}/u.test(innerWithoutCommands)) {
         result += ch;
         i += 1;
         continue;
