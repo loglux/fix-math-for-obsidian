@@ -61,23 +61,38 @@ var FixMathPlugin = class extends import_obsidian.Plugin {
       return;
     }
     try {
-      let originalContent = "";
-      let newContent = "";
-      let stats = { inlineCount: 0, blockCount: 0 };
-      await this.app.vault.process(view.file, (content) => {
-        originalContent = content;
-        const result = transformText(content);
-        stats = result.stats;
-        newContent = result.text;
-        return result.text;
-      });
-      const hasChanges = originalContent !== newContent;
-      const total = stats.inlineCount + stats.blockCount;
-      if (!hasChanges || total === 0) {
-        new import_obsidian.Notice("No changes required");
-        this.updateStatusBar("No changes", 3e3);
-        return;
+      const editor = view.editor;
+      const stats = { inlineCount: 0, blockCount: 0 };
+      if (editor.somethingSelected()) {
+        const selected = editor.getSelection();
+        const converted = convertMath(selected, stats);
+        const total2 = stats.inlineCount + stats.blockCount;
+        if (converted === selected || total2 === 0) {
+          new import_obsidian.Notice("No changes required");
+          this.updateStatusBar("No changes", 3e3);
+          return;
+        }
+        editor.replaceSelection(converted);
+      } else {
+        let originalContent = "";
+        let newContent = "";
+        await this.app.vault.process(view.file, (content) => {
+          originalContent = content;
+          const result = transformText(content);
+          stats.inlineCount = result.stats.inlineCount;
+          stats.blockCount = result.stats.blockCount;
+          newContent = result.text;
+          return result.text;
+        });
+        const hasChanges = originalContent !== newContent;
+        const total2 = stats.inlineCount + stats.blockCount;
+        if (!hasChanges || total2 === 0) {
+          new import_obsidian.Notice("No changes required");
+          this.updateStatusBar("No changes", 3e3);
+          return;
+        }
       }
+      const total = stats.inlineCount + stats.blockCount;
       let statsMsg = `Converted ${total} formula${total !== 1 ? "s" : ""}`;
       if (stats.inlineCount > 0 && stats.blockCount > 0) {
         statsMsg += ` (${stats.inlineCount} inline, ${stats.blockCount} block)`;

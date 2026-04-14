@@ -44,28 +44,48 @@ export default class FixMathPlugin extends Plugin {
         }
 
         try {
-            let originalContent = "";
-            let newContent = "";
-            let stats: ConversionStats = { inlineCount: 0, blockCount: 0 };
+            const editor = view.editor;
+            const stats: ConversionStats = { inlineCount: 0, blockCount: 0 };
 
-            await this.app.vault.process(view.file, (content) => {
-                originalContent = content;
-                const result = transformText(content);
-                stats = result.stats;
-                newContent = result.text;
-                return result.text;
-            });
+            if (editor.somethingSelected()) {
+                // Selection mode: convert only the selected text
+                const selected = editor.getSelection();
+                const converted = convertMath(selected, stats);
+                const total = stats.inlineCount + stats.blockCount;
 
-            const hasChanges = originalContent !== newContent;
-            const total = stats.inlineCount + stats.blockCount;
+                if (converted === selected || total === 0) {
+                    new Notice("No changes required");
+                    this.updateStatusBar("No changes", 3000);
+                    return;
+                }
 
-            if (!hasChanges || total === 0) {
-                new Notice("No changes required");
-                this.updateStatusBar("No changes", 3000);
-                return;
+                editor.replaceSelection(converted);
+            } else {
+                // Whole-file mode
+                let originalContent = "";
+                let newContent = "";
+
+                await this.app.vault.process(view.file, (content) => {
+                    originalContent = content;
+                    const result = transformText(content);
+                    stats.inlineCount = result.stats.inlineCount;
+                    stats.blockCount = result.stats.blockCount;
+                    newContent = result.text;
+                    return result.text;
+                });
+
+                const hasChanges = originalContent !== newContent;
+                const total = stats.inlineCount + stats.blockCount;
+
+                if (!hasChanges || total === 0) {
+                    new Notice("No changes required");
+                    this.updateStatusBar("No changes", 3000);
+                    return;
+                }
             }
 
             // Build statistics message
+            const total = stats.inlineCount + stats.blockCount;
             let statsMsg = `Converted ${total} formula${total !== 1 ? 's' : ''}`;
 
             if (stats.inlineCount > 0 && stats.blockCount > 0) {
