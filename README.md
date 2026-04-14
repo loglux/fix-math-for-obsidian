@@ -87,12 +87,16 @@ npm run build
 1. Open the Markdown file you want to fix in Obsidian
 2. Either:
     - Click the **wand icon** (🪄) in the left ribbon, or
-    - Open Command Palette (`Ctrl/Cmd+P`) and run **"Fix math for Obsidian (current file)"**
+    - Open Command Palette (`Ctrl/Cmd+P`) and run **"Fix math (current file)"**
 3. You'll see a notification with conversion statistics:
     - "Converted 5 formulas (3 inline, 2 block)" if changes were made
     - "No changes required" if nothing needed fixing
     - "Error: failed to process file" if something went wrong
-4. The **status bar** at the bottom will briefly display the result, then reset to "Fix Math ready"
+4. The **status bar** at the bottom will briefly display the result, then reset to "Ready"
+
+### Selection mode
+
+If you **select some text** before running the command, only the selected text will be converted — the rest of the file is left untouched. This is useful when you want to convert a single paragraph or a freshly pasted block without affecting already-processed content.
 
 ## Keyboard shortcut
 
