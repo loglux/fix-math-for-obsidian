@@ -474,6 +474,19 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
     while (i < text.length) {
         const ch = text[i];
 
+        // Skip \( ... \) spans — leave them for the backslash inline handler
+        if (ch === "\\" && i + 1 < text.length && text[i + 1] === "(") {
+            const end = text.indexOf("\\)", i + 2);
+            if (end !== -1) {
+                result += text.slice(i, end + 2);
+                i = end + 2;
+            } else {
+                result += ch;
+                i += 1;
+            }
+            continue;
+        }
+
         if (ch === "(") {
             const prev = i === 0 ? "" : text[i - 1];
 

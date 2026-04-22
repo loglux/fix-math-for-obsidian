@@ -321,6 +321,17 @@ function convertPlainParens(text, isMathy, stats) {
   const isWhitespace = (ch) => /\s/.test(ch);
   while (i < text.length) {
     const ch = text[i];
+    if (ch === "\\" && i + 1 < text.length && text[i + 1] === "(") {
+      const end = text.indexOf("\\)", i + 2);
+      if (end !== -1) {
+        result += text.slice(i, end + 2);
+        i = end + 2;
+      } else {
+        result += ch;
+        i += 1;
+      }
+      continue;
+    }
     if (ch === "(") {
       const prev = i === 0 ? "" : text[i - 1];
       if (i > 0 && !isWhitespace(prev) && prev !== "(") {
