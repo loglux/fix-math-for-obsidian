@@ -282,6 +282,10 @@ $$`;
             return match;
           if (inner.startsWith("^"))
             return match;
+          const openInline = (before.match(/\\\(/g) || []).length;
+          const closeInline = (before.match(/\\\)/g) || []).length;
+          if (openInline > closeInline)
+            return match;
           if (hasLaTeXCommand(inner) || isMathy(inner)) {
             stats.blockCount++;
             return `$$

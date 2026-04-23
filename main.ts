@@ -394,6 +394,10 @@ $$`;
                     if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) return match;
                     if (match.startsWith('[[')) return match;
                     if (inner.startsWith('^')) return match;
+                    // Skip if inside a \( ... \) inline math span
+                    const openInline = (before.match(/\\\(/g) || []).length;
+                    const closeInline = (before.match(/\\\)/g) || []).length;
+                    if (openInline > closeInline) return match;
                     if (hasLaTeXCommand(inner) || isMathy(inner)) {
                         stats.blockCount++;
                         return `$$\n${inner.trim()}\n$$`;
