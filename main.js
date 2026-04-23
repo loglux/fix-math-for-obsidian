@@ -255,6 +255,7 @@ $$`;
       let p = part.replace(
         /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
         (match, offset, fullText) => {
+          const before = fullText.slice(0, offset);
           const afterBracket = fullText[offset + match.length];
           if (afterBracket === "(" || afterBracket === ":")
             return match;
@@ -262,6 +263,10 @@ $$`;
             return match;
           const inner = match.slice(1, -1);
           if (inner.startsWith("^"))
+            return match;
+          const openInline = (before.match(/\\\(/g) || []).length;
+          const closeInline = (before.match(/\\\)/g) || []).length;
+          if (openInline > closeInline)
             return match;
           stats.blockCount++;
           return `$$

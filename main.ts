@@ -373,11 +373,16 @@ $$`;
             let p = part.replace(
                 /\[\s*\\left\[[^\n]*?\\right\][^\n]*?\]/g,
                 (match: string, offset: number, fullText: string) => {
+                    const before = fullText.slice(0, offset);
                     const afterBracket = fullText[offset + match.length];
                     if (afterBracket === "(" || afterBracket === ":") return match;
                     if (match.startsWith("[[")) return match;
                     const inner = match.slice(1, -1);
                     if (inner.startsWith("^")) return match;
+                    // Skip if inside a \( ... \) inline math span
+                    const openInline = (before.match(/\\\(/g) || []).length;
+                    const closeInline = (before.match(/\\\)/g) || []).length;
+                    if (openInline > closeInline) return match;
                     stats.blockCount++;
                     return `$$\n${inner.trim()}\n$$`;
                 }
