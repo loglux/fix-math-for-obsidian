@@ -209,6 +209,15 @@ function splitByCodeFences(md: string): Segment[] {
  *  - ( ... )             → $ ... $  (only if it looks like maths)
  */
 function convertMath(text: string, stats: ConversionStats): string {
+    // Protect inline code spans (single/double backticks) from conversion.
+    // e.g. `msg[layer_idx]` must not have [layer_idx] treated as math.
+    const inlineCodeSpans: string[] = [];
+    text = text.replace(/(`+)([^`\n]+)\1/g, (match) => {
+        const idx = inlineCodeSpans.length;
+        inlineCodeSpans.push(match);
+        return `\x00CODE${idx}\x00`;
+    });
+
     // 1) Convert quoted block formulae:
     //
     // > \[
@@ -459,6 +468,11 @@ $$`;
             return chunk;
         })
         .join("");
+
+    // Restore inline code spans
+    if (inlineCodeSpans.length > 0) {
+        out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr) => inlineCodeSpans[parseInt(idxStr)]);
+    }
 
     return out;
 }

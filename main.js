@@ -176,6 +176,12 @@ function splitByCodeFences(md) {
   return out;
 }
 function convertMath(text, stats) {
+  const inlineCodeSpans = [];
+  text = text.replace(/(`+)([^`\n]+)\1/g, (match) => {
+    const idx = inlineCodeSpans.length;
+    inlineCodeSpans.push(match);
+    return `\0CODE${idx}\0`;
+  });
   text = text.replace(
     /^>[ \t]*\\\[[ \t]*\r?\n([\s\S]*?)\r?\n>[ \t]*\\\][ \t]*$/gm,
     (_match, inner) => {
@@ -322,6 +328,9 @@ $$`;
     );
     return chunk;
   }).join("");
+  if (inlineCodeSpans.length > 0) {
+    out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr) => inlineCodeSpans[parseInt(idxStr)]);
+  }
   return out;
 }
 function convertPlainParens(text, isMathy, stats) {
