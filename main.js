@@ -203,7 +203,7 @@ function convertMath(text, stats) {
   const bracketBlockRe = /^[ \t]*([#>\-*+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
   const hasLaTeXCommand = (s) => /\\[a-zA-Z]+/.test(s);
   const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
-  const isMathy = (s) => {
+  const isMathy = (s, strict = false) => {
     if (/[\\_^→∞±≥≤]|\\text\{/.test(s)) {
       return true;
     }
@@ -215,14 +215,16 @@ function convertMath(text, stats) {
     if (hasDigit && hasOp) {
       return true;
     }
-    if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
-      return true;
-    }
-    if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
-      return true;
-    }
-    if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
-      return true;
+    if (!strict) {
+      if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
+        return true;
+      }
+      if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
+        return true;
+      }
+      if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
+        return true;
+      }
     }
     if (/^[a-zA-Z]\s*[=<>+\-*/]\s*[a-zA-Z]/.test(s)) {
       return true;
@@ -244,7 +246,7 @@ $$`;
     bracketBlockRe,
     (m, prefix, inner) => {
       const p = prefix ?? "";
-      if (isMathy(inner)) {
+      if (isMathy(inner, true)) {
         stats.blockCount++;
         return `${p}$$
 ${inner.trim()}
@@ -297,7 +299,7 @@ $$`;
           const closeInline = (before.match(/\\\)/g) || []).length;
           if (openInline > closeInline)
             return match;
-          if (hasLaTeXCommand(inner) || isMathy(inner)) {
+          if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
             stats.blockCount++;
             return `$$
 ${inner.trim()}

@@ -294,7 +294,12 @@ function convertMath(text: string, stats: ConversionStats): string {
     //  - or obvious maths Unicode symbols (→, ∞, ±, ≥, ≤)
     //  - or, if ASCII-ish, a digit AND a maths operator (+-*/=)
     //  - or simple variable equations like x=y, a<b
-    const isMathy = (s: string) => {
+    // strict=true is used for [ ... ] bracket blocks (display math markers).
+    // In strict mode, borderline heuristics are disabled: a pure number like [1]
+    // is a footnote reference, a single letter like [n] is a label, and an
+    // uppercase sequence like [RL] is an abbreviation — none are display math.
+    // These patterns DO make sense for plain parentheses (geometry notation).
+    const isMathy = (s: string, strict = false) => {
         // Explicit mathematical markers: LaTeX commands, subscripts/superscripts, arrows, ∞, ±, ≥, ≤
         if (/[\\_^→∞±≥≤]|\\text\{/.test(s)) {
             return true;
@@ -313,18 +318,21 @@ function convertMath(text: string, stats: ConversionStats): string {
             return true;
         }
 
-        // A pure number (possibly with a minus sign and/or a decimal part) also counts as maths
-        // Examples: "0", "-1", "3.14"
-        if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
-            return true;
-        }
+        if (!strict) {
+            // A pure number (possibly with a minus sign and/or a decimal part) also counts as maths.
+            // Disabled in strict mode: [1], [42] are footnote references, not display math.
+            if (/^\s*-?\d+(?:\.\d+)?\s*$/.test(s)) {
+                return true;
+            }
 
-        // Single-letter variables or uppercase geometry notation: (p), (x'), (DEM), (EM)
-        if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
-            return true;
-        }
-        if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
-            return true;
+            // Single-letter variables or uppercase geometry notation: (p), (x'), (DEM), (EM)
+            // Disabled in strict mode: [n] is a label, [RL] is an abbreviation.
+            if (/^[a-zA-Z](?:'+)?$/.test(s.trim())) {
+                return true;
+            }
+            if (/^[A-Z]{2,}(?:'+)?$/.test(s.trim())) {
+                return true;
+            }
         }
 
         // Simple variable equations without digits
@@ -359,7 +367,7 @@ $$`;
         bracketBlockRe,
         (m: string, prefix: string | undefined, inner: string) => {
             const p = prefix ?? "";
-            if (isMathy(inner)) {
+            if (isMathy(inner, true)) {
                 stats.blockCount++;
                 return `${p}$$
 ${inner.trim()}
@@ -412,7 +420,7 @@ $$`;
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;
                     if (openInline > closeInline) return match;
-                    if (hasLaTeXCommand(inner) || isMathy(inner)) {
+                    if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
                         stats.blockCount++;
                         return `$$\n${inner.trim()}\n$$`;
                     }
