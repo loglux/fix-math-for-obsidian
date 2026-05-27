@@ -400,6 +400,9 @@ $$`;
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;
                     if (openInline > closeInline) return match;
+                    // Skip if inside an existing $ ... $ inline math span
+                    const singleDollars = (before.match(/(?<!\$)\$(?!\$)/g) || []).length;
+                    if (singleDollars % 2 === 1) return match;
                     stats.blockCount++;
                     return `$$\n${inner.trim()}\n$$`;
                 }
@@ -420,6 +423,9 @@ $$`;
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;
                     if (openInline > closeInline) return match;
+                    // Skip if inside an existing $ ... $ inline math span
+                    const singleDollars = (before.match(/(?<!\$)\$(?!\$)/g) || []).length;
+                    if (singleDollars % 2 === 1) return match;
                     if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
                         stats.blockCount++;
                         return `$$\n${inner.trim()}\n$$`;

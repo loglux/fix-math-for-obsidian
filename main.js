@@ -276,6 +276,9 @@ $$`;
           const closeInline = (before.match(/\\\)/g) || []).length;
           if (openInline > closeInline)
             return match;
+          const singleDollars = (before.match(/(?<!\$)\$(?!\$)/g) || []).length;
+          if (singleDollars % 2 === 1)
+            return match;
           stats.blockCount++;
           return `$$
 ${inner.trim()}
@@ -298,6 +301,9 @@ $$`;
           const openInline = (before.match(/\\\(/g) || []).length;
           const closeInline = (before.match(/\\\)/g) || []).length;
           if (openInline > closeInline)
+            return match;
+          const singleDollars = (before.match(/(?<!\$)\$(?!\$)/g) || []).length;
+          if (singleDollars % 2 === 1)
             return match;
           if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
             stats.blockCount++;
