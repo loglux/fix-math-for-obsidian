@@ -200,7 +200,6 @@ function convertMath(text, stats) {
   text = text.replace(/^#[ \t]*(\[[ \t]*)$/gm, (_m, bracket) => bracket);
   text = text.replace(/^#[ \t]*(\\begin\{)/gm, "$1");
   const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
-  const bracketBlockRe = /^[ \t]*([#>\-*+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
   const hasLaTeXCommand = (s) => /\\[a-zA-Z]+/.test(s);
   const inlineBackslashRe = /(^|[^\\])\\\((.+?)\\\)/g;
   const isMathy = (s, strict = false) => {
@@ -242,19 +241,58 @@ function convertMath(text, stats) {
 ${inner.trim()}
 $$`;
   });
-  out = out.replace(
-    bracketBlockRe,
-    (m, prefix, inner) => {
-      const p = prefix ?? "";
-      if (isMathy(inner, true)) {
-        stats.blockCount++;
-        return `${p}$$
-${inner.trim()}
-$$`;
+  {
+    const lines = out.split(/\r?\n/);
+    const result = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const openMatch = line.match(/^([ \t]*(?:[#>\-*+0-9.]+\s*)?)\[[ \t]*$/);
+      if (openMatch) {
+        const prefix = openMatch[1];
+        let depth = 1;
+        let j = i + 1;
+        const innerLines = [];
+        let found = false;
+        while (j < lines.length) {
+          const l = lines[j];
+          let closedHere = false;
+          for (const ch of l) {
+            if (ch === "[")
+              depth++;
+            else if (ch === "]") {
+              depth--;
+              if (depth === 0) {
+                closedHere = true;
+                break;
+              }
+            }
+          }
+          if (closedHere) {
+            if (/^[ \t]*\][ \t]*$/.test(l))
+              found = true;
+            break;
+          }
+          innerLines.push(l);
+          j++;
+        }
+        if (found) {
+          const inner = innerLines.join("\n");
+          if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
+            stats.blockCount++;
+            result.push(`${prefix}$$`);
+            result.push(inner.trim());
+            result.push("$$");
+            i = j + 1;
+            continue;
+          }
+        }
       }
-      return m;
+      result.push(line);
+      i++;
     }
-  );
+    out = result.join("\n");
+  }
   {
     const bracketParts = out.split(/(\$\$[\s\S]*?\$\$)/);
     out = bracketParts.map((part, idx) => {

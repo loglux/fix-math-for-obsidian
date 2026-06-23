@@ -277,9 +277,8 @@ function convertMath(text: string, stats: ConversionStats): string {
     const displayBackslashRe = /(^|[^\\])\\\[((?:[\s\S]*?))\\\]/g;
 
     // 3) Multiline [ ... ] blocks → $$ ... $$ (only when it looks like maths)
-    //    Optionally allow a simple Markdown prefix before "[" (e.g. "# ", "> ", "- ").
-    const bracketBlockRe =
-        /^[ \t]*([#>\-*+0-9.]+\s*)?\[[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\][ \t]*$/gm;
+    //    Uses depth-counting to find the matching ] so nested ] inside the block
+    //    (e.g. \mathbf{1}[condition]) don't prematurely close the outer block.
 
     // 4) Single-line [ ... ] blocks → $$ ... $$ (only when it looks like maths)
     //    Examples: [ \frac{a}{b}(c + d) = ... ]
@@ -363,19 +362,50 @@ $$`;
     });
 
     // Convert multiline [ ... ] → $$ ... $$ (only if it looks like maths)
-    out = out.replace(
-        bracketBlockRe,
-        (m: string, prefix: string | undefined, inner: string) => {
-            const p = prefix ?? "";
-            if (isMathy(inner, true)) {
-                stats.blockCount++;
-                return `${p}$$
-${inner.trim()}
-$$`;
+    {
+        const lines = out.split(/\r?\n/);
+        const result: string[] = [];
+        let i = 0;
+        while (i < lines.length) {
+            const line = lines[i];
+            const openMatch = line.match(/^([ \t]*(?:[#>\-*+0-9.]+\s*)?)\[[ \t]*$/);
+            if (openMatch) {
+                const prefix = openMatch[1];
+                let depth = 1;
+                let j = i + 1;
+                const innerLines: string[] = [];
+                let found = false;
+                while (j < lines.length) {
+                    const l = lines[j];
+                    let closedHere = false;
+                    for (const ch of l) {
+                        if (ch === "[") depth++;
+                        else if (ch === "]") { depth--; if (depth === 0) { closedHere = true; break; } }
+                    }
+                    if (closedHere) {
+                        if (/^[ \t]*\][ \t]*$/.test(l)) found = true;
+                        break;
+                    }
+                    innerLines.push(l);
+                    j++;
+                }
+                if (found) {
+                    const inner = innerLines.join("\n");
+                    if (hasLaTeXCommand(inner) || isMathy(inner, true)) {
+                        stats.blockCount++;
+                        result.push(`${prefix}$$`);
+                        result.push(inner.trim());
+                        result.push("$$");
+                        i = j + 1;
+                        continue;
+                    }
+                }
             }
-            return m;
+            result.push(line);
+            i++;
         }
-    );
+        out = result.join("\n");
+    }
 
     // Apply single-line [ ... ] handlers only to text OUTSIDE existing $$ blocks.
     // This prevents converting brackets that are already inside a $$ block
