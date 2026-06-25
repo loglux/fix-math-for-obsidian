@@ -481,6 +481,10 @@ $$`;
     //     Remove the prefix and append "-" on the next line.
     //   - "+,formula" or "-,formula" → "+formula" / "-formula"
     //     ChatGPT uses comma after sign as separator artifact.
+    //   - unescaped "#" → "\#"
+    //     ChatGPT uses "#" to mean "number of" (e.g. "# Yes"), which must be
+    //     escaped in MathJax. Applied after heading cleanup so "## formula"
+    //     artifacts are handled first.
     out = out.replace(/\$\$([\s\S]*?)\$\$/g, (block: string) =>
         block
             .replace(/(?<!\\)\\[ \t]*$/gm, "\\\\")
@@ -489,6 +493,7 @@ $$`;
             .replace(/^-{3,}$/gm, "-")
             .replace(/^#{1,6}[ \t]+(.*)/gm, "$1\n-")
             .replace(/^([+-]),/gm, "$1")
+            .replace(/(?<!\\)#/g, "\\#")
     );
 
     // At this point, all block maths are in $$ ... $$.
