@@ -353,6 +353,10 @@ function convertMath(text: string, stats: ConversionStats): string {
     };
 
 
+    // Normalize adjacent \]\[ on the same line: insert newline so each block is matched separately.
+    // Without this, \]\[ leaves the second \[ preceded by \ which blocks the regex.
+    text = text.replace(/\\\][ \t]*\\\[/g, '\\]\n\\[');
+
     // Convert \[ ... \] → $$ ... $$
     let out = text.replace(displayBackslashRe, (_, pre: string, inner: string) => {
         stats.blockCount++;

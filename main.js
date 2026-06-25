@@ -235,6 +235,7 @@ function convertMath(text, stats) {
     }
     return false;
   };
+  text = text.replace(/\\\][ \t]*\\\[/g, "\\]\n\\[");
   let out = text.replace(displayBackslashRe, (_, pre, inner) => {
     stats.blockCount++;
     return `${pre}$$
