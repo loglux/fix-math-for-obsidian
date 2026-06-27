@@ -455,6 +455,8 @@ $$`;
                     if (inner.startsWith('^')) return match;
                     // Pure numeric lists like [11, 46] or [1, 2, 3] are citation references, not math
                     if (/^\s*\d+(?:\s*,\s*\d+)*\s*$/.test(inner)) return match;
+                    // Pure letter lists like [a, b] or [x, y, z] are interval/set notation, not display blocks
+                    if (/^[a-zA-Z](?:\s*,\s*[a-zA-Z])*$/.test(inner)) return match;
                     // Skip if inside a \( ... \) inline math span
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;

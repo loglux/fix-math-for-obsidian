@@ -339,6 +339,8 @@ $$`;
             return match;
           if (/^\s*\d+(?:\s*,\s*\d+)*\s*$/.test(inner))
             return match;
+          if (/^[a-zA-Z](?:\s*,\s*[a-zA-Z])*$/.test(inner))
+            return match;
           const openInline = (before.match(/\\\(/g) || []).length;
           const closeInline = (before.match(/\\\)/g) || []).length;
           if (openInline > closeInline)
