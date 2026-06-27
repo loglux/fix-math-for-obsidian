@@ -1,0 +1,32 @@
+# Development files (tests, docs, notes)
+dev/
+
+# Working documentation (ignore all .md except README.md and GitHub templates)
+*.md
+!README.md
+!.github/**/*.md
+
+# Temporary and backup files
+*.backup
+*.tsba
+back/
+fix-math/
+files*.zip
+
+# Node modules
+node_modules/
+
+# Build output (main.js is committed for releases)
+# Uncomment if you want to ignore it:
+# main.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
