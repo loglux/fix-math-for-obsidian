@@ -337,6 +337,8 @@ $$`;
             return match;
           if (inner.startsWith("^"))
             return match;
+          if (/^\s*\d+(?:\s*,\s*\d+)*\s*$/.test(inner))
+            return match;
           const openInline = (before.match(/\\\(/g) || []).length;
           const closeInline = (before.match(/\\\)/g) || []).length;
           if (openInline > closeInline)

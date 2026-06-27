@@ -453,6 +453,8 @@ $$`;
                     if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) return match;
                     if (match.startsWith('[[')) return match;
                     if (inner.startsWith('^')) return match;
+                    // Pure numeric lists like [11, 46] or [1, 2, 3] are citation references, not math
+                    if (/^\s*\d+(?:\s*,\s*\d+)*\s*$/.test(inner)) return match;
                     // Skip if inside a \( ... \) inline math span
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;
