@@ -51,6 +51,7 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
 | `> [...]` *(quoted bracket block, multi-line)*       | block       | `> $$...$$`   |
 | `[ ... ]` *(if on separate lines and contains math)* | block       | `$$...$$`     |
 | `[ ... ]` *(single line with LaTeX, e.g. from AI)*  | block       | `$$...$$`     |
+| `[11, 46]`, `[1, 2, 3]` *(digits and commas only)* | —           | unchanged     |
 | `( ... )` *(if contains math)*                       | inline      | `$...$`       |
 | ` ```...``` ` or `~~~...~~~`                         | code block  | unchanged     |
 
@@ -291,6 +292,7 @@ The plugin intelligently detects mathematical expressions based on:
 - **Markdown links**: `[text](url)` and `[text]: url` – recognised as links, not math
 - **Wikilinks**: `[[page name]]` – Obsidian internal links
 - **Footnotes**: `[^ref]` – footnote references
+- **Numeric lists**: `[11, 46]`, `[1, 2, 3]` – brackets containing only numbers are left unchanged
 
 ## Customisation
 
