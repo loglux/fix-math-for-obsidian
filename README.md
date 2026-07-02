@@ -55,6 +55,8 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
 | `( ... )` *(if contains math)*                       | inline      | `$...$`       |
 | ` ```...``` ` or `~~~...~~~`                         | code block  | unchanged     |
 
+> **Note:** Full-width CJK punctuation (`，`, `。`, `！`, `？`, `；`, `：`, `、`) is recognized as a valid delimiter after a closing `)` since v1.0.31.
+
 ## Installation
 
 ### From release (recommended)
