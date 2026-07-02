@@ -437,7 +437,7 @@ function convertPlainParens(text, isMathy, stats) {
         k += 1;
       }
       const after = k < text.length ? text[k] : "";
-      const afterIsDelim = after === "" || isWhitespace(after) || ").,;:?!*_".includes(after);
+      const afterIsDelim = after === "" || isWhitespace(after) || ").,;:?!*_\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u3001".includes(after);
       if (!afterIsDelim) {
         result += ch;
         i += 1;

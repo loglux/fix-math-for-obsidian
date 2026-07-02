@@ -619,7 +619,7 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             const afterIsDelim =
                 after === "" ||
                 isWhitespace(after) ||
-                ").,;:?!*_".includes(after);
+                ").,;:?!*_，。！？；：、".includes(after);
 
             // If it does not look like a delimiter, treat "(" as normal and move on.
             if (!afterIsDelim) {
