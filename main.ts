@@ -444,6 +444,9 @@ $$`;
 
             // Convert single-line [ ... ] → $$ ... $$ (only if it looks like maths)
             // Must avoid Markdown links, wikilinks, footnotes.
+            //
+            // Key heuristic: ChatGPT display math always has a space after "[": [ formula ]
+            // Brackets without leading space — [citation], [abbrev], [ref] — are text, not math.
             p = p.replace(
                 /\[([^\]]+)\]/g,
                 (match: string, inner: string, offset: number, fullText: string) => {
@@ -453,10 +456,12 @@ $$`;
                     if (/\\left\s*$/.test(before) || /\\right/.test(inner) || /\\left/.test(inner)) return match;
                     if (match.startsWith('[[')) return match;
                     if (inner.startsWith('^')) return match;
-                    // Pure numeric lists like [11, 46] or [1, 2, 3] are citation references, not math
+                    // No leading space → treat as text (citation, abbreviation, reference)
+                    if (!/^\s/.test(inner)) return match;
+                    // Pure numeric lists like [ 11, 46 ] are citation references, not math
                     if (/^\s*\d+(?:\s*,\s*\d+)*\s*$/.test(inner)) return match;
-                    // Pure letter lists like [a, b] or [x, y, z] are interval/set notation, not display blocks
-                    if (/^[a-zA-Z](?:\s*,\s*[a-zA-Z])*$/.test(inner)) return match;
+                    // Pure letter lists like [ a, b ] are interval/set notation, not display blocks
+                    if (/^\s*[a-zA-Z](?:\s*,\s*[a-zA-Z])*\s*$/.test(inner)) return match;
                     // Skip if inside a \( ... \) inline math span
                     const openInline = (before.match(/\\\(/g) || []).length;
                     const closeInline = (before.match(/\\\)/g) || []).length;
