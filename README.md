@@ -57,6 +57,8 @@ While there are other plugins for converting LaTeX delimiters, this one focuses 
 
 > **Note:** Chinese and other East Asian punctuation marks (CJK: `，`, `。`, `！`, `？`, `；`, `：`, `、`) are recognized as valid delimiters after a closing `)` since v1.0.31.
 
+> **Note:** Korean grammatical particles (은/는, 이/가, 을/를, 와/과, 의, 에, 로/으로, and others) are recognized as valid delimiters after a closing `)` since v1.0.33, so expressions like `(\lambda)와` or `(s)를` convert correctly.
+
 ## Installation
 
 ### From release (recommended)
