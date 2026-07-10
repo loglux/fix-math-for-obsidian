@@ -439,7 +439,8 @@ function convertPlainParens(text, isMathy, stats) {
         k += 1;
       }
       const after = k < text.length ? text[k] : "";
-      const afterIsDelim = after === "" || isWhitespace(after) || ").,;:?!*_\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u3001".includes(after);
+      const koreanParticleRe = /^(?:으로|에서|에게|까지|부터|처럼|보다|마다|이나|이라|은|는|이|가|을|를|와|과|의|에|께|도|만|로|나|라)/;
+      const afterIsDelim = after === "" || isWhitespace(after) || ").,;:?!*_\uFF0C\u3002\uFF01\uFF1F\uFF1B\uFF1A\u3001".includes(after) || koreanParticleRe.test(text.slice(k));
       if (!afterIsDelim) {
         result += ch;
         i += 1;

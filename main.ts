@@ -211,6 +211,9 @@ function splitByCodeFences(md: string): Segment[] {
 function convertMath(text: string, stats: ConversionStats): string {
     // Protect inline code spans (single/double backticks) from conversion.
     // e.g. `msg[layer_idx]` must not have [layer_idx] treated as math.
+    // Sentinel \x00 (null byte) is intentional: U+0000 is forbidden in UTF-8 text files,
+    // so it can never appear in real content. Do NOT replace with  or other characters —
+    // PUA characters are valid UTF-8 and could theoretically appear in user notes.
     const inlineCodeSpans: string[] = [];
     text = text.replace(/(`+)([^`\n]+)\1/g, (match) => {
         const idx = inlineCodeSpans.length;
@@ -533,7 +536,8 @@ $$`;
 
     // Restore inline code spans
     if (inlineCodeSpans.length > 0) {
-        out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr) => inlineCodeSpans[parseInt(idxStr)]);
+        // eslint-disable-next-line no-control-regex
+        out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr: string) => inlineCodeSpans[parseInt(idxStr)]);
     }
 
     return out;
@@ -621,10 +625,14 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             }
 
             const after = k < text.length ? text[k] : "";
+            // Korean grammatical particles (은/는, 이/가, 을/를, 와/과, 의, etc.)
+            // attach directly to the preceding expression without a space.
+            const koreanParticleRe = /^(?:으로|에서|에게|까지|부터|처럼|보다|마다|이나|이라|은|는|이|가|을|를|와|과|의|에|께|도|만|로|나|라)/;
             const afterIsDelim =
                 after === "" ||
                 isWhitespace(after) ||
-                ").,;:?!*_，。！？；：、".includes(after);
+                ").,;:?!*_，。！？；：、".includes(after) ||
+                koreanParticleRe.test(text.slice(k));
 
             // If it does not look like a delimiter, treat "(" as normal and move on.
             if (!afterIsDelim) {
