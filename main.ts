@@ -109,7 +109,7 @@ export default class FixMathPlugin extends Plugin {
     private updateStatusBar(text: string, resetAfter: number) {
         if (this.statusEl) {
             this.statusEl.setText(text);
-            // eslint-disable-next-line no-undef
+            // eslint-disable-next-line no-undef -- window is available in Obsidian's browser environment
             window.setTimeout(() => {
                 if (this.statusEl) this.statusEl.setText("Ready");
             }, resetAfter);
@@ -536,7 +536,7 @@ $$`;
 
     // Restore inline code spans
     if (inlineCodeSpans.length > 0) {
-        // eslint-disable-next-line no-control-regex
+        // eslint-disable-next-line no-control-regex -- \x00 (null byte) is intentional sentinel, impossible in real UTF-8 content
         out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr: string) => inlineCodeSpans[parseInt(idxStr)]);
     }
 
