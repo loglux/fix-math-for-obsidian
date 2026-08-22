@@ -364,7 +364,9 @@ $$`;
   }
   out = out.replace(
     /\$\$([\s\S]*?)\$\$/g,
-    (block) => block.replace(/(?<!\\)\\[ \t]*$/gm, "\\\\").replace(/(?<!\\)\\(?=[0-9-])/g, "\\\\").replace(/^={3,}$/gm, "=").replace(/^-{3,}$/gm, "-").replace(/^#{1,6}[ \t]+(.*)/gm, "$1\n-").replace(/^([+-]),/gm, "$1").replace(/(?<!\\)#/g, "\\#")
+    (block) => repairMangledAmpersands(
+      block.replace(/(?<!\\)\\[ \t]*$/gm, "\\\\")
+    ).replace(/(?<!\\)\\(?=[0-9-])/g, "\\\\").replace(/^={3,}$/gm, "=").replace(/^-{3,}$/gm, "-").replace(/^#{1,6}[ \t]+(.*)/gm, "$1\n-").replace(/^([+-]),/gm, "$1").replace(/(?<!\\)#/g, "\\#")
   );
   const parts = out.split(/(\$\$[\s\S]*?\$\$)/);
   out = parts.map((part, idx) => {
@@ -385,6 +387,55 @@ $$`;
     out = out.replace(/\x00CODE(\d+)\x00/g, (_, idxStr) => inlineCodeSpans[parseInt(idxStr)]);
   }
   return out;
+}
+function repairMangledAmpersands(block) {
+  const alignmentEnvironments = /* @__PURE__ */ new Set([
+    "align",
+    "align*",
+    "aligned",
+    "alignedat",
+    "array",
+    "cases",
+    "matrix",
+    "pmatrix",
+    "bmatrix",
+    "Bmatrix",
+    "vmatrix",
+    "Vmatrix",
+    "smallmatrix",
+    "split",
+    "gathered"
+  ]);
+  const isInsideAlignmentEnvironment = (text, offset) => {
+    const stack = [];
+    const environmentRe = /\\(begin|end)\{([^}]+)\}/g;
+    let match;
+    while ((match = environmentRe.exec(text)) !== null && match.index < offset) {
+      const [, action, environment] = match;
+      if (!alignmentEnvironments.has(environment))
+        continue;
+      if (action === "begin") {
+        stack.push(environment);
+      } else {
+        const index = stack.lastIndexOf(environment);
+        if (index !== -1)
+          stack.splice(index, 1);
+      }
+    }
+    return stack.length > 0;
+  };
+  const repair = (match, spacing, offset, text, lineEnd) => {
+    if (isInsideAlignmentEnvironment(text, offset))
+      return match;
+    return `\\${spacing}\\&${lineEnd ? "\\ " : ""}`;
+  };
+  return block.replace(
+    /\\([ \t]+)&\\\\(?=[ \t]*\r?$)/gm,
+    (match, spacing, offset, text) => repair(match, spacing, offset, text, true)
+  ).replace(
+    /\\([ \t]+)&(?=\\[ \t]+)/g,
+    (match, spacing, offset, text) => repair(match, spacing, offset, text, false)
+  );
 }
 function convertPlainParens(text, isMathy, stats) {
   let result = "";

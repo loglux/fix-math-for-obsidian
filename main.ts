@@ -493,13 +493,16 @@ $$`;
     //     Remove the prefix and append "-" on the next line.
     //   - "+,formula" or "-,formula" → "+formula" / "-formula"
     //     ChatGPT uses comma after sign as separator artifact.
+    //   - "\ &\ " or "\ &\" at end of line → "\ \&\ "
+    //     Only outside environments where "&" is a valid alignment marker.
     //   - unescaped "#" → "\#"
     //     ChatGPT uses "#" to mean "number of" (e.g. "# Yes"), which must be
     //     escaped in MathJax. Applied after heading cleanup so "## formula"
     //     artifacts are handled first.
     out = out.replace(/\$\$([\s\S]*?)\$\$/g, (block: string) =>
-        block
-            .replace(/(?<!\\)\\[ \t]*$/gm, "\\\\")
+        repairMangledAmpersands(
+            block.replace(/(?<!\\)\\[ \t]*$/gm, "\\\\")
+        )
             .replace(/(?<!\\)\\(?=[0-9-])/g, "\\\\")
             .replace(/^={3,}$/gm, "=")
             .replace(/^-{3,}$/gm, "-")
@@ -541,6 +544,50 @@ $$`;
     }
 
     return out;
+}
+
+/**
+ * Repair a Markdown-export artefact around a bitwise AND. The generic
+ * trailing-backslash repair has already run, so an end-of-line "\ &\"
+ * appears here as "\ &\\". Preserve all surrounding whitespace and skip
+ * LaTeX environments in which a bare ampersand is meaningful alignment.
+ */
+function repairMangledAmpersands(block: string): string {
+    const alignmentEnvironments = new Set([
+        "align", "align*", "aligned", "alignedat", "array", "cases",
+        "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix",
+        "smallmatrix", "split", "gathered",
+    ]);
+
+    const isInsideAlignmentEnvironment = (text: string, offset: number) => {
+        const stack: string[] = [];
+        const environmentRe = /\\(begin|end)\{([^}]+)\}/g;
+        let match: RegExpExecArray | null;
+
+        while ((match = environmentRe.exec(text)) !== null && match.index < offset) {
+            const [, action, environment] = match;
+            if (!alignmentEnvironments.has(environment)) continue;
+            if (action === "begin") {
+                stack.push(environment);
+            } else {
+                const index = stack.lastIndexOf(environment);
+                if (index !== -1) stack.splice(index, 1);
+            }
+        }
+
+        return stack.length > 0;
+    };
+
+    const repair = (match: string, spacing: string, offset: number, text: string, lineEnd: boolean) => {
+        if (isInsideAlignmentEnvironment(text, offset)) return match;
+        return `\\${spacing}\\&${lineEnd ? "\\ " : ""}`;
+    };
+
+    return block
+        .replace(/\\([ \t]+)&\\\\(?=[ \t]*\r?$)/gm,
+            (match: string, spacing: string, offset: number, text: string) => repair(match, spacing, offset, text, true))
+        .replace(/\\([ \t]+)&(?=\\[ \t]+)/g,
+            (match: string, spacing: string, offset: number, text: string) => repair(match, spacing, offset, text, false));
 }
 
 /**
