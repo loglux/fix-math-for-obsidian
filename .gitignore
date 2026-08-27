@@ -4,6 +4,7 @@ dev/
 # Working documentation (ignore all .md except README.md and GitHub templates)
 *.md
 !README.md
+!CONTRIBUTING.md
 !.github/**/*.md
 
 # Temporary and backup files
