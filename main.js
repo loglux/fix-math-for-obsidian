@@ -427,6 +427,11 @@ function convertPlainParens(text, isMathy, stats) {
       }
       const closeIndex = j - 1;
       const inner = text.slice(i + 1, closeIndex);
+      if (/^\s*\$(?!\$)(?:\\.|[^$\n])+\$\s*$/.test(inner)) {
+        result += text.slice(i, closeIndex + 1);
+        i = closeIndex + 1;
+        continue;
+      }
       if (/\\\(/.test(inner) || /\\\)/.test(inner)) {
         result += ch;
         i += 1;

@@ -607,6 +607,15 @@ function convertPlainParens(text: string, isMathy: (s: string) => boolean, stats
             const closeIndex = j - 1;
             const inner = text.slice(i + 1, closeIndex);
 
+            // Preserve ordinary parentheses around an existing inline math span.
+            // The inner expression is already valid Obsidian math, so wrapping it
+            // again would turn ($x$) into the unintended display delimiter $$x$$.
+            if (/^\s*\$(?!\$)(?:\\.|[^$\n])+\$\s*$/.test(inner)) {
+                result += text.slice(i, closeIndex + 1);
+                i = closeIndex + 1;
+                continue;
+            }
+
             // If inner already contains explicit LaTeX inline delimiters,
             // treat the outer parentheses as plain text and let those
             // inner expressions be handled separately.
