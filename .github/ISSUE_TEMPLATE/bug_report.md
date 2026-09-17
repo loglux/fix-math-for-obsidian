@@ -9,6 +9,9 @@ assignees: ''
 ## Plugin version
 <!-- e.g. 1.0.28 -->
 
+## AI assistant used
+<!-- e.g. ChatGPT (GPT-4o), Claude, Copilot, Gemini — please include the version if known -->
+
 ## Input text
 <!-- Paste the FULL text as received from the AI assistant — do not simplify or shorten it -->
 
